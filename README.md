@@ -1,2 +1,8 @@
-# AIORI-3-HACKATHON-PROJECTS
-This repository will contain the code and resources for the AIORI-3 hackathon that will be developed during the AIORI-3
+## Team Introduction Video
+
+**AIORI Hackathon 3 — Team TC490**
+
+Project: NEXORA  
+Problem Statement: PS-035
+
+[Watch Our Team Introduction Video](https://youtu.be/QsLOF3n7Zx8)
