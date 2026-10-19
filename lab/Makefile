@@ -9,17 +9,18 @@ COMPOSE_FILE := $(LAB_DIR)docker-compose.yml
 PROJECT := nexora
 LAB_SH := $(LAB_DIR)lab.sh
 
-.PHONY: lab-up lab-down lab-status lab-verify lab-logs lab-restart lab-failover help
+.PHONY: lab-up lab-down lab-status lab-verify lab-logs lab-restart lab-failover lab-restore-sysctl help
 
 help:
 	@echo "NEXORA Lab Commands:"
-	@echo "  make lab-up       Start the five-router OSPF ring lab"
-	@echo "  make lab-down     Stop and remove NEXORA lab containers"
-	@echo "  make lab-status   Show container and OSPF neighbor status"
-	@echo "  make lab-verify   Run all connectivity and OSPF checks"
-	@echo "  make lab-logs     Show all container logs"
-	@echo "  make lab-restart  Teardown and restart"
-	@echo "  make lab-failover Run L12 link-failure smoke test"
+	@echo "  make lab-up             Start the five-router OSPF ring lab"
+	@echo "  make lab-down           Stop and remove NEXORA lab containers"
+	@echo "  make lab-status         Show container and OSPF neighbor status"
+	@echo "  make lab-verify         Run all connectivity and OSPF checks"
+	@echo "  make lab-logs           Show all container logs"
+	@echo "  make lab-restart        Teardown and restart"
+	@echo "  make lab-failover       Run L12 link-failure smoke test"
+	@echo "  make lab-restore-sysctl Restore recorded host sysctl setting"
 
 lab-up:
 	@bash $(LAB_SH) up
@@ -41,3 +42,6 @@ lab-restart:
 
 lab-failover:
 	@bash $(LAB_SH) failover
+
+lab-restore-sysctl:
+	@bash $(LAB_SH) restore-sysctl

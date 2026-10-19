@@ -66,8 +66,23 @@ On development environments where other Docker projects (such as FaultLens) run 
 
 NEXORA solves this using a two-tier virtual networking model:
 1. **L2 Carrier Subnets**: Docker Compose creates isolated bridge networks (`nexora_net_l12` through `nexora_net_l51`) using non-conflicting IPAM ranges (`172.31.x.x/29`).
-2. **Deterministic Interface Normalization**: At container boot, `lab/scripts/configure.sh` detects interface attachments, standardizes naming so `eth0` is always management, `eth1` is Link 1, and `eth2` is Link 2, and assigns the official Phase 01 `10.0.x.x/30` addresses.
-3. **Pure L2 Forwarding**: `lab.sh` configures `net.bridge.bridge-nf-call-iptables=0` on the Docker host to allow line-rate bridged packet delivery across containers without host iptables interference.
+2. **Deterministic Interface Normalization**: At container boot, `lab/scripts/configure.sh` detects interface attachments, validates that exactly 3 non-loopback interfaces exist, avoids interface naming collisions via atomic temporary names, standardizes naming so `eth0` is always management, `eth1` is Link 1, and `eth2` is Link 2, and assigns the official Phase 01 `10.0.x.x/30` addresses idempotently.
+3. **Reproducible Pinned Image**: All 5 router containers are pinned to the verified immutable multi-arch digest:
+   `frrouting/frr@sha256:990e83490108b686fd6df3b1cafa6bdbb2714acb00eedb9a89693946f46f45ce` (FRRouting 8.4 on Linux kernel 7.0 / amd64 emulation on Apple Silicon).
+
+### Docker Network Safety & Shared-Host Considerations
+When data packets with `10.0.x.x/30` IPs traverse Linux Docker bridges whose IPAM is `172.31.x.x/29`, Linux kernel bridge netfilter (`br_netfilter`) intercepts bridged frames and checks them against host `iptables` FORWARD rules. If `net.bridge.bridge-nf-call-iptables=1`, the host firewall drops cross-bridge data packets.
+
+Setting `net.bridge.bridge-nf-call-iptables=0` disables iptables processing of bridged Layer 2 frames. However, this is a **Docker VM host-wide sysctl**:
+- **Shared Host Impact**: Changing this setting impacts all bridge networks on the host Docker VM, including concurrent projects like FaultLens.
+- **Safety Safeguard**: `lab.sh` inspects the setting first. If already 0, no modification is made. If not 0, `lab.sh` requires explicit permission via `NEXORA_PERMIT_HOST_SYSCTL=1` and records the original setting in `lab/.sysctl_state.json`.
+- **Restoration**: `./lab.sh restore-sysctl` restores the host setting if recorded, requiring `NEXORA_PERMIT_HOST_SYSCTL=1` to ensure concurrent projects are not unexpectedly disrupted.
+- **Teardown**: Normal `lab.sh down` preserves the host sysctl so active co-located projects (FaultLens) continue uninterrupted.
+
+### Container Security & Capabilities Review
+Each router container uses `privileged: true` with `NET_ADMIN` and `SYS_ADMIN`.
+- **Why Required**: Phase 03 requires runtime network fault injection using Linux Traffic Control (`tc netem` for packet delay, jitter, corruption, and packet loss) and interface state manipulation (`ip link set ... down/up`), as well as namespace sysctl manipulation (`net.ipv4.conf.*.rp_filter=0`).
+- **Capability Scoping**: Restricting capabilities to narrower subsets without `privileged: true` in Docker for Mac / Linux VM environments can cause `tc qdisc add` and network namespace mutations to fail with permission errors (`EPERM`). To preserve reliability and avoid breaking fault injection, `privileged: true` is deliberately retained for this local network testbed. Host file access is strictly guarded through read-only bind mounts (`:ro` on `/etc/frr` and `/startup/configure.sh`).
 
 ---
 

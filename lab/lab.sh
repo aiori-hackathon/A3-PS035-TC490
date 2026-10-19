@@ -31,9 +31,36 @@ log_header()  { echo -e "\n${BLUE}=== $* ===${NC}"; }
 # ---------------------------------------------------------------------------
 lab_up() {
     log_header "NEXORA Lab — UP"
-    log_info "Ensuring host Linux bridge filtering does not drop inter-container frames..."
-    docker run --rm --privileged --net=host alpine sysctl -w net.bridge.bridge-nf-call-iptables=0 >/dev/null 2>&1 || true
-    docker run --rm --privileged --net=host alpine sysctl -w net.bridge.bridge-nf-call-ip6tables=0 >/dev/null 2>&1 || true
+    log_info "Checking host Linux bridge netfilter state..."
+    CURRENT_SYSCTL=$(docker run --rm --net=host alpine sysctl -n net.bridge.bridge-nf-call-iptables 2>/dev/null || echo "unknown")
+    if [ "${CURRENT_SYSCTL}" = "0" ]; then
+        log_ok "Host Linux bridge netfilter (net.bridge.bridge-nf-call-iptables) is already 0 (no host change required)"
+    else
+        log_warn "Host Linux bridge filtering (net.bridge.bridge-nf-call-iptables) is currently ${CURRENT_SYSCTL}."
+        log_warn "SHARED HOST IMPACT: Nexora data-plane links use re-addressed /30 subnets over Docker bridges."
+        log_warn "When bridge-nf-call-iptables=1, host iptables drops cross-bridge /30 packets."
+        log_warn "Modifying this sysctl alters the entire Docker host VM and affects co-located projects (e.g. FaultLens)."
+        if [ "${NEXORA_PERMIT_HOST_SYSCTL:-0}" = "1" ]; then
+            log_info "NEXORA_PERMIT_HOST_SYSCTL=1 detected. Recording original sysctl state..."
+            SYSCTL_STATE_FILE="${SCRIPT_DIR}/.sysctl_state.json"
+            if [ ! -f "${SYSCTL_STATE_FILE}" ]; then
+                cat <<EOF > "${SYSCTL_STATE_FILE}"
+{
+  "original_bridge_nf_call_iptables": "${CURRENT_SYSCTL}",
+  "recorded_at": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+  "modified_by_project": "nexora"
+}
+EOF
+                log_ok "Saved original host sysctl state to ${SYSCTL_STATE_FILE}"
+            fi
+            log_info "Configuring host bridge filtering to 0..."
+            docker run --rm --privileged --net=host alpine sysctl -w net.bridge.bridge-nf-call-iptables=0 >/dev/null 2>&1 || true
+            docker run --rm --privileged --net=host alpine sysctl -w net.bridge.bridge-nf-call-ip6tables=0 >/dev/null 2>&1 || true
+        else
+            log_warn "Host sysctl change was NOT permitted. Run with NEXORA_PERMIT_HOST_SYSCTL=1 to permit this change explicitly."
+            log_warn "Proceeding with lab startup, but inter-router data plane packets may be dropped if bridge-nf-call-iptables remains 1."
+        fi
+    fi
     log_info "Starting five-router OSPF ring..."
     docker compose -f "${COMPOSE_FILE}" -p "${PROJECT_NAME}" up -d
     log_info "Waiting ${OSPF_CONVERGENCE_TIMEOUT}s for OSPF convergence..."
@@ -46,7 +73,34 @@ lab_down() {
     log_header "NEXORA Lab — DOWN"
     log_info "Stopping and removing NEXORA containers only..."
     docker compose -f "${COMPOSE_FILE}" -p "${PROJECT_NAME}" down --volumes=false
+    log_info "Host sysctl net.bridge.bridge-nf-call-iptables preserved to prevent disruption to concurrent projects."
+    log_info "Run './lab.sh restore-sysctl' if you wish to restore the recorded host sysctl setting."
     log_ok "NEXORA lab stopped. FaultLens and other projects unaffected."
+}
+
+# ---------------------------------------------------------------------------
+restore_sysctl() {
+    log_header "NEXORA Lab — RESTORE HOST SYSCTL"
+    SYSCTL_STATE_FILE="${SCRIPT_DIR}/.sysctl_state.json"
+    if [ ! -f "${SYSCTL_STATE_FILE}" ]; then
+        log_warn "No recorded sysctl state found at ${SYSCTL_STATE_FILE}. Nexora did not record any host modification."
+        return 0
+    fi
+    ORIG_VAL=$(grep -o '"original_bridge_nf_call_iptables": *"[^"]*"' "${SYSCTL_STATE_FILE}" | cut -d'"' -f4 || echo "")
+    if [ -z "${ORIG_VAL}" ]; then
+        log_error "Could not parse original sysctl value from ${SYSCTL_STATE_FILE}"
+        return 1
+    fi
+    log_warn "Shared-Host Impact: Other running projects (e.g. FaultLens) may currently rely on net.bridge.bridge-nf-call-iptables=0."
+    log_warn "Restoring host sysctl to ${ORIG_VAL} may disrupt active Docker networks."
+    if [ "${NEXORA_PERMIT_HOST_SYSCTL:-0}" != "1" ]; then
+        log_error "Explicit operator approval required to restore host sysctl. Run with: NEXORA_PERMIT_HOST_SYSCTL=1 ./lab.sh restore-sysctl"
+        return 1
+    fi
+    docker run --rm --privileged --net=host alpine sysctl -w "net.bridge.bridge-nf-call-iptables=${ORIG_VAL}" >/dev/null 2>&1 || true
+    docker run --rm --privileged --net=host alpine sysctl -w "net.bridge.bridge-nf-call-ip6tables=${ORIG_VAL}" >/dev/null 2>&1 || true
+    rm -f "${SYSCTL_STATE_FILE}"
+    log_ok "Restored host net.bridge.bridge-nf-call-iptables=${ORIG_VAL} and removed state file."
 }
 
 # ---------------------------------------------------------------------------
@@ -283,22 +337,24 @@ failover_test() {
 # ---------------------------------------------------------------------------
 CMD="${1:-help}"
 case "${CMD}" in
-    up)       lab_up ;;
-    down)     lab_down ;;
-    status)   lab_status ;;
-    verify)   lab_verify ;;
-    logs)     lab_logs "$@" ;;
-    restart)  lab_restart ;;
-    failover) failover_test ;;
+    up)             lab_up ;;
+    down)           lab_down ;;
+    status)         lab_status ;;
+    verify)         lab_verify ;;
+    logs)           lab_logs "$@" ;;
+    restart)        lab_restart ;;
+    failover)       failover_test ;;
+    restore-sysctl) restore_sysctl ;;
     help|*)
-        echo "Usage: $0 {up|down|status|verify|logs [router]|restart|failover}"
+        echo "Usage: $0 {up|down|status|verify|logs [router]|restart|failover|restore-sysctl}"
         echo ""
-        echo "  up        Start the NEXORA five-router OSPF lab"
-        echo "  down      Stop and remove NEXORA lab containers only"
-        echo "  status    Show container and OSPF neighbor status"
-        echo "  verify    Run all connectivity and OSPF verification checks"
-        echo "  logs      Show container logs (optional: specify router e.g. r1)"
-        echo "  restart   Teardown and restart the lab"
-        echo "  failover  Run L12 link-failure smoke test"
+        echo "  up              Start the NEXORA five-router OSPF lab"
+        echo "  down            Stop and remove NEXORA lab containers only"
+        echo "  status          Show container and OSPF neighbor status"
+        echo "  verify          Run all connectivity and OSPF verification checks"
+        echo "  logs            Show container logs (optional: specify router e.g. r1)"
+        echo "  restart         Teardown and restart the lab"
+        echo "  failover        Run L12 link-failure smoke test"
+        echo "  restore-sysctl  Restore original host sysctl setting recorded before lab startup"
         ;;
 esac
