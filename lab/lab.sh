@@ -335,26 +335,45 @@ failover_test() {
 }
 
 # ---------------------------------------------------------------------------
+fault_cmd() {
+    cd "${SCRIPT_DIR}/../backend" && PYTHONPATH=".:.." uv run python -m lab.fault_injection.cli "$@"
+}
+
+# ---------------------------------------------------------------------------
 CMD="${1:-help}"
 case "${CMD}" in
-    up)             lab_up ;;
-    down)           lab_down ;;
-    status)         lab_status ;;
-    verify)         lab_verify ;;
-    logs)           lab_logs "$@" ;;
-    restart)        lab_restart ;;
-    failover)       failover_test ;;
-    restore-sysctl) restore_sysctl ;;
+    up)                    lab_up ;;
+    down)                  lab_down ;;
+    status)                lab_status ;;
+    verify)                lab_verify ;;
+    logs)                  lab_logs "$@" ;;
+    restart)               lab_restart ;;
+    failover)              failover_test ;;
+    restore-sysctl)        restore_sysctl ;;
+    fault-list)            shift; fault_cmd list "$@" ;;
+    fault-status)          shift; fault_cmd status "$@" ;;
+    fault-observe)         shift; fault_cmd observe "$@" ;;
+    fault-inject)          shift; fault_cmd inject "$@" ;;
+    fault-reset)           shift; fault_cmd reset "$@" ;;
+    fault-emergency-reset) shift; fault_cmd emergency-reset "$@" ;;
+    fault-run)             shift; fault_cmd run "$@" ;;
     help|*)
-        echo "Usage: $0 {up|down|status|verify|logs [router]|restart|failover|restore-sysctl}"
+        echo "Usage: $0 {up|down|status|verify|logs [router]|restart|failover|restore-sysctl|fault-*}"
         echo ""
-        echo "  up              Start the NEXORA five-router OSPF lab"
-        echo "  down            Stop and remove NEXORA lab containers only"
-        echo "  status          Show container and OSPF neighbor status"
-        echo "  verify          Run all connectivity and OSPF verification checks"
-        echo "  logs            Show container logs (optional: specify router e.g. r1)"
-        echo "  restart         Teardown and restart the lab"
-        echo "  failover        Run L12 link-failure smoke test"
-        echo "  restore-sysctl  Restore original host sysctl setting recorded before lab startup"
+        echo "  up                    Start the NEXORA five-router OSPF lab"
+        echo "  down                  Stop and remove NEXORA lab containers only"
+        echo "  status                Show container and OSPF neighbor status"
+        echo "  verify                Run all connectivity and OSPF verification checks"
+        echo "  logs                  Show container logs (optional: specify router e.g. r1)"
+        echo "  restart               Teardown and restart the lab"
+        echo "  failover              Run L12 link-failure smoke test"
+        echo "  restore-sysctl        Restore original host sysctl setting recorded before lab startup"
+        echo "  fault-list            List all available fault injection scenarios"
+        echo "  fault-status          Check active fault experiment status"
+        echo "  fault-observe         Print current network observation snapshot"
+        echo "  fault-inject <scen>   Inject a fault (e.g. F1, F2, F3, F4, F5)"
+        echo "  fault-reset           Safely restore active fault"
+        echo "  fault-emergency-reset Idempotently reset all interfaces, qdiscs, and OSPF timers"
+        echo "  fault-run <scen>      Run complete experiment lifecycle with structured report"
         ;;
 esac

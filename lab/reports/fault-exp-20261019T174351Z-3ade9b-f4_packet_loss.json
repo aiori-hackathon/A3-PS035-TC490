@@ -1,0 +1,217 @@
+{
+  "run_id": "exp-20261019T174351Z-3ade9b",
+  "scenario_id": "F4_PACKET_LOSS",
+  "fault_type": "PACKET_LOSS",
+  "actual_fault_location": {
+    "kind": "LINK",
+    "component_id": "L12",
+    "affected_routers": [
+      "R1",
+      "R2"
+    ]
+  },
+  "affected_components": [
+    "L12",
+    "nexora-r1",
+    "eth1"
+  ],
+  "parameters": {
+    "loss_pct": 30
+  },
+  "injection_timestamp": "2026-10-19T17:43:51.306002Z",
+  "observation_timestamps": [
+    "2026-10-19T17:44:01.307497Z"
+  ],
+  "recovery_timestamp": "2026-10-19T17:44:13.914922Z",
+  "baseline_observations": {
+    "timestamp": "2026-10-19T17:43:50.630421Z",
+    "container_health": {
+      "nexora-r1": true,
+      "nexora-r2": true,
+      "nexora-r3": true,
+      "nexora-r4": true,
+      "nexora-r5": true
+    },
+    "ospf_neighbors": {
+      "nexora-r1": {
+        "5.5.5.5": "Full/-",
+        "2.2.2.2": "Full/-"
+      },
+      "nexora-r2": {
+        "1.1.1.1": "Full/-",
+        "3.3.3.3": "Full/-"
+      },
+      "nexora-r3": {
+        "2.2.2.2": "Full/-",
+        "4.4.4.4": "Full/-"
+      },
+      "nexora-r4": {
+        "3.3.3.3": "Full/-",
+        "5.5.5.5": "Full/-"
+      },
+      "nexora-r5": {
+        "4.4.4.4": "Full/-",
+        "1.1.1.1": "Full/-"
+      }
+    },
+    "ospf_routes_count": {
+      "nexora-r1": 10,
+      "nexora-r2": 10,
+      "nexora-r3": 10,
+      "nexora-r4": 10,
+      "nexora-r5": 10
+    },
+    "loopback_pings": {
+      "nexora-r1->nexora-r2": true,
+      "nexora-r1->nexora-r3": true,
+      "nexora-r1->nexora-r4": true,
+      "nexora-r1->nexora-r5": true,
+      "nexora-r2->nexora-r1": true,
+      "nexora-r2->nexora-r3": true,
+      "nexora-r2->nexora-r4": true,
+      "nexora-r2->nexora-r5": true,
+      "nexora-r3->nexora-r1": true,
+      "nexora-r3->nexora-r2": true,
+      "nexora-r3->nexora-r4": true,
+      "nexora-r3->nexora-r5": true,
+      "nexora-r4->nexora-r1": true,
+      "nexora-r4->nexora-r2": true,
+      "nexora-r4->nexora-r3": true,
+      "nexora-r4->nexora-r5": true,
+      "nexora-r5->nexora-r1": true,
+      "nexora-r5->nexora-r2": true,
+      "nexora-r5->nexora-r3": true,
+      "nexora-r5->nexora-r4": true
+    },
+    "probe_metrics": {}
+  },
+  "fault_state_observations": {
+    "timestamp": "2026-10-19T17:44:08.254795Z",
+    "container_health": {
+      "nexora-r1": true,
+      "nexora-r2": true,
+      "nexora-r3": true,
+      "nexora-r4": true,
+      "nexora-r5": true
+    },
+    "ospf_neighbors": {
+      "nexora-r1": {
+        "5.5.5.5": "Full/-",
+        "2.2.2.2": "Full/-"
+      },
+      "nexora-r2": {
+        "1.1.1.1": "Full/-",
+        "3.3.3.3": "Full/-"
+      },
+      "nexora-r3": {
+        "2.2.2.2": "Full/-",
+        "4.4.4.4": "Full/-"
+      },
+      "nexora-r4": {
+        "3.3.3.3": "Full/-",
+        "5.5.5.5": "Full/-"
+      },
+      "nexora-r5": {
+        "4.4.4.4": "Full/-",
+        "1.1.1.1": "Full/-"
+      }
+    },
+    "ospf_routes_count": {
+      "nexora-r1": 10,
+      "nexora-r2": 10,
+      "nexora-r3": 10,
+      "nexora-r4": 10,
+      "nexora-r5": 10
+    },
+    "loopback_pings": {
+      "nexora-r1->nexora-r2": true,
+      "nexora-r1->nexora-r3": true,
+      "nexora-r1->nexora-r4": true,
+      "nexora-r1->nexora-r5": true,
+      "nexora-r2->nexora-r1": false,
+      "nexora-r2->nexora-r3": true,
+      "nexora-r2->nexora-r4": true,
+      "nexora-r2->nexora-r5": true,
+      "nexora-r3->nexora-r1": true,
+      "nexora-r3->nexora-r2": true,
+      "nexora-r3->nexora-r4": true,
+      "nexora-r3->nexora-r5": true,
+      "nexora-r4->nexora-r1": true,
+      "nexora-r4->nexora-r2": true,
+      "nexora-r4->nexora-r3": true,
+      "nexora-r4->nexora-r5": true,
+      "nexora-r5->nexora-r1": true,
+      "nexora-r5->nexora-r2": true,
+      "nexora-r5->nexora-r3": true,
+      "nexora-r5->nexora-r4": true
+    },
+    "probe_metrics": {
+      "probe_ping_output": "PING 10.0.12.2 (10.0.12.2): 56 data bytes\n64 bytes from 10.0.12.2: seq=0 ttl=64 time=0.142 ms\n64 bytes from 10.0.12.2: seq=1 ttl=64 time=0.474 ms\n64 bytes from 10.0.12.2: seq=2 ttl=64 time=0.310 ms\n64 bytes from 10.0.12.2: seq=3 ttl=64 time=0.277 ms\n64 bytes from 10.0.12.2: seq=4 ttl=64 time=0.342 ms\n64 bytes from 10.0.12.2: seq=8 ttl=64 time=0.132 ms\n64 bytes from 10.0.12.2: seq=9 ttl=64 time=0.131 ms\n\n--- 10.0.12.2 ping statistics ---\n10 packets transmitted, 7 packets received, 30% packet loss\nround-trip min/avg/max = 0.131/0.258/0.474 ms\n",
+      "probe_ping_rc": 0
+    }
+  },
+  "restoration_observations": {
+    "timestamp": "2026-10-19T17:44:15.802951Z",
+    "container_health": {
+      "nexora-r1": true,
+      "nexora-r2": true,
+      "nexora-r3": true,
+      "nexora-r4": true,
+      "nexora-r5": true
+    },
+    "ospf_neighbors": {
+      "nexora-r1": {
+        "5.5.5.5": "Full/-",
+        "2.2.2.2": "Full/-"
+      },
+      "nexora-r2": {
+        "1.1.1.1": "Full/-",
+        "3.3.3.3": "Full/-"
+      },
+      "nexora-r3": {
+        "2.2.2.2": "Full/-",
+        "4.4.4.4": "Full/-"
+      },
+      "nexora-r4": {
+        "3.3.3.3": "Full/-",
+        "5.5.5.5": "Full/-"
+      },
+      "nexora-r5": {
+        "4.4.4.4": "Full/-",
+        "1.1.1.1": "Full/-"
+      }
+    },
+    "ospf_routes_count": {
+      "nexora-r1": 10,
+      "nexora-r2": 10,
+      "nexora-r3": 10,
+      "nexora-r4": 10,
+      "nexora-r5": 10
+    },
+    "loopback_pings": {
+      "nexora-r1->nexora-r2": true,
+      "nexora-r1->nexora-r3": true,
+      "nexora-r1->nexora-r4": true,
+      "nexora-r1->nexora-r5": true,
+      "nexora-r2->nexora-r1": true,
+      "nexora-r2->nexora-r3": true,
+      "nexora-r2->nexora-r4": true,
+      "nexora-r2->nexora-r5": true,
+      "nexora-r3->nexora-r1": true,
+      "nexora-r3->nexora-r2": true,
+      "nexora-r3->nexora-r4": true,
+      "nexora-r3->nexora-r5": true,
+      "nexora-r4->nexora-r1": true,
+      "nexora-r4->nexora-r2": true,
+      "nexora-r4->nexora-r3": true,
+      "nexora-r4->nexora-r5": true,
+      "nexora-r5->nexora-r1": true,
+      "nexora-r5->nexora-r2": true,
+      "nexora-r5->nexora-r3": true,
+      "nexora-r5->nexora-r4": true
+    },
+    "probe_metrics": {}
+  },
+  "experiment_outcome": "SUCCESS",
+  "errors": []
+}

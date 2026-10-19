@@ -1,0 +1,10 @@
+{
+  "run_id": "exp-20261019T174231Z-3a565c",
+  "scenario_id": "F2_ROUTER_FAILURE",
+  "seeded_fault_type": "ROUTER_FAILURE",
+  "actual_fault_location_id": "R3",
+  "injection_timestamp": "2026-10-19T17:42:31.297851Z",
+  "recovery_timestamp": "2026-10-19T17:43:16.982044Z",
+  "experiment_seed": 42,
+  "lab_operator_notes": "Outcome: SUCCESS; Target: R3; Params: {}"
+}

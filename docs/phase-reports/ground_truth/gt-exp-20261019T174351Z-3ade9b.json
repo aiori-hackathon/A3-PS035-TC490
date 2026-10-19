@@ -1,0 +1,10 @@
+{
+  "run_id": "exp-20261019T174351Z-3ade9b",
+  "scenario_id": "F4_PACKET_LOSS",
+  "seeded_fault_type": "PACKET_LOSS",
+  "actual_fault_location_id": "L12",
+  "injection_timestamp": "2026-10-19T17:43:51.306002Z",
+  "recovery_timestamp": "2026-10-19T17:44:13.914922Z",
+  "experiment_seed": 42,
+  "lab_operator_notes": "Outcome: SUCCESS; Target: L12; Params: {'loss_pct': 30}"
+}

@@ -1,0 +1,10 @@
+{
+  "run_id": "exp-20261019T174322Z-5b7e56",
+  "scenario_id": "F3_OSPF_CONFIG_MISMATCH",
+  "seeded_fault_type": "OSPF_CONFIGURATION_MISMATCH",
+  "actual_fault_location_id": "L12",
+  "injection_timestamp": "2026-10-19T17:43:22.957189Z",
+  "recovery_timestamp": "2026-10-19T17:43:45.611653Z",
+  "experiment_seed": 42,
+  "lab_operator_notes": "Outcome: SUCCESS; Target: L12; Params: {'hello_interval': 5, 'dead_interval': 15}"
+}

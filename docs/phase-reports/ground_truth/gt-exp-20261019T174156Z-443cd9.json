@@ -1,0 +1,10 @@
+{
+  "run_id": "exp-20261019T174156Z-443cd9",
+  "scenario_id": "F1_LINK_FAILURE",
+  "seeded_fault_type": "LINK_FAILURE",
+  "actual_fault_location_id": "L12",
+  "injection_timestamp": "2026-10-19T17:41:57.028066Z",
+  "recovery_timestamp": "2026-10-19T17:42:25.371909Z",
+  "experiment_seed": 42,
+  "lab_operator_notes": "Outcome: SUCCESS; Target: L12; Params: {}"
+}

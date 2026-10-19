@@ -1,0 +1,10 @@
+{
+  "run_id": "exp-20261019T174419Z-fa5cec",
+  "scenario_id": "F5_HIGH_LATENCY",
+  "seeded_fault_type": "HIGH_LATENCY",
+  "actual_fault_location_id": "L12",
+  "injection_timestamp": "2026-10-19T17:44:19.743440Z",
+  "recovery_timestamp": "2026-10-19T17:44:40.006315Z",
+  "experiment_seed": 42,
+  "lab_operator_notes": "Outcome: SUCCESS; Target: L12; Params: {'delay_ms': 100}"
+}

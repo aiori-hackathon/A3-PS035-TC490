@@ -18,12 +18,12 @@ if [ -z "${MATCH1:-}" ] || [ -z "${MATCH2:-}" ]; then
     exit 1
 fi
 
-# Step 0: Enumerate non-loopback interfaces and detect unexpected extra interfaces
-ALL_IFS=$(ip -o link show | awk -F': ' '{print $2}' | grep -v '^lo' | cut -d'@' -f1 | sort)
+# Step 0: Enumerate Docker Ethernet interfaces and detect unexpected extra interfaces
+ALL_IFS=$(ip -o link show | awk -F': ' '{print $2}' | grep -E '^eth|^_t_' | cut -d'@' -f1 | sort)
 IF_COUNT=$(echo "$ALL_IFS" | wc -w | tr -d ' ')
 
 if [ "$IF_COUNT" -ne 3 ]; then
-    echo "[nexora-startup] ERROR: Expected exactly 3 non-loopback network interfaces (mgmt, link1, link2), but detected ${IF_COUNT}: ${ALL_IFS}"
+    echo "[nexora-startup] ERROR: Expected exactly 3 Ethernet network interfaces (mgmt, link1, link2), but detected ${IF_COUNT}: ${ALL_IFS}"
     echo "[nexora-startup] Full interface details:"
     ip -br addr
     exit 1
