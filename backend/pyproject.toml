@@ -44,3 +44,6 @@ minversion = "8.0"
 testpaths = ["tests"]
 pythonpath = ["."]
 asyncio_mode = "auto"
+markers = [
+    "lab_integration: tests requiring a running NEXORA Docker Compose lab",
+]

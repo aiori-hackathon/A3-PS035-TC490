@@ -210,7 +210,5 @@ class ProbeResult(BaseModel):
             ProbeStatus.REJECTED,
         }
         if self.status in terminal_failure_statuses and not self.failure_reason:
-            raise ValueError(
-                f"failure_reason is required when probe status is {self.status.value}"
-            )
+            raise ValueError(f"failure_reason is required when probe status is {self.status.value}")
         return self

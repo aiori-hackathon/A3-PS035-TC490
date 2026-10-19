@@ -102,11 +102,21 @@ def _five_router_topology() -> dict:
             _make_router("R5", "5.5.5.5", "192.168.255.5/32"),
         ],
         "links": [
-            _make_link("L12", "10.0.12.0/30", "R1", "eth1", "10.0.12.1/30", "R2", "eth1", "10.0.12.2/30"),
-            _make_link("L23", "10.0.23.0/30", "R2", "eth2", "10.0.23.1/30", "R3", "eth1", "10.0.23.2/30"),
-            _make_link("L34", "10.0.34.0/30", "R3", "eth2", "10.0.34.1/30", "R4", "eth1", "10.0.34.2/30"),
-            _make_link("L45", "10.0.45.0/30", "R4", "eth2", "10.0.45.1/30", "R5", "eth1", "10.0.45.2/30"),
-            _make_link("L51", "10.0.15.0/30", "R5", "eth2", "10.0.15.1/30", "R1", "eth2", "10.0.15.2/30"),
+            _make_link(
+                "L12", "10.0.12.0/30", "R1", "eth1", "10.0.12.1/30", "R2", "eth1", "10.0.12.2/30"
+            ),
+            _make_link(
+                "L23", "10.0.23.0/30", "R2", "eth2", "10.0.23.1/30", "R3", "eth1", "10.0.23.2/30"
+            ),
+            _make_link(
+                "L34", "10.0.34.0/30", "R3", "eth2", "10.0.34.1/30", "R4", "eth1", "10.0.34.2/30"
+            ),
+            _make_link(
+                "L45", "10.0.45.0/30", "R4", "eth2", "10.0.45.1/30", "R5", "eth1", "10.0.45.2/30"
+            ),
+            _make_link(
+                "L51", "10.0.15.0/30", "R5", "eth2", "10.0.15.1/30", "R1", "eth2", "10.0.15.2/30"
+            ),
         ],
     }
 
@@ -144,7 +154,9 @@ def _make_hypothesis(
     )
 
 
-def _make_certificate(cert_id: str = "cert-001", incident_id: str = "inc-001") -> EvidenceCertificate:
+def _make_certificate(
+    cert_id: str = "cert-001", incident_id: str = "inc-001"
+) -> EvidenceCertificate:
     return EvidenceCertificate(
         certificate_id=cert_id,
         incident_id=incident_id,
@@ -237,7 +249,9 @@ class TestInvalidTopology:
     def test_duplicate_link_ids(self) -> None:
         data = _five_router_topology()
         data["links"].append(
-            _make_link("L12", "10.0.99.0/30", "R1", "eth3", "10.0.99.1/30", "R3", "eth3", "10.0.99.2/30")
+            _make_link(
+                "L12", "10.0.99.0/30", "R1", "eth3", "10.0.99.1/30", "R3", "eth3", "10.0.99.2/30"
+            )
         )
         with pytest.raises(ValidationError, match="Duplicate link IDs"):
             Topology(**data)
@@ -245,7 +259,9 @@ class TestInvalidTopology:
     def test_link_endpoint_not_in_topology(self) -> None:
         data = _five_router_topology()
         data["links"].append(
-            _make_link("L99", "10.0.99.0/30", "R6", "eth1", "10.0.99.1/30", "R1", "eth3", "10.0.99.2/30")
+            _make_link(
+                "L99", "10.0.99.0/30", "R6", "eth1", "10.0.99.1/30", "R1", "eth3", "10.0.99.2/30"
+            )
         )
         with pytest.raises(ValidationError, match="not in topology routers"):
             Topology(**data)
@@ -253,31 +269,69 @@ class TestInvalidTopology:
     def test_link_self_loop_rejected(self) -> None:
         with pytest.raises(ValidationError, match="router_a and router_b must differ"):
             NetworkLink(
-                **_make_link("L99", "10.0.99.0/30", "R1", "eth1", "10.0.99.1/30", "R1", "eth2", "10.0.99.2/30")
+                **_make_link(
+                    "L99",
+                    "10.0.99.0/30",
+                    "R1",
+                    "eth1",
+                    "10.0.99.1/30",
+                    "R1",
+                    "eth2",
+                    "10.0.99.2/30",
+                )
             )
 
     def test_invalid_ipv4_address_in_link(self) -> None:
         with pytest.raises(ValidationError):
             NetworkLink(
-                **_make_link("L12", "10.0.12.0/30", "R1", "eth1", "999.999.999.999/30", "R2", "eth1", "10.0.12.2/30")
+                **_make_link(
+                    "L12",
+                    "10.0.12.0/30",
+                    "R1",
+                    "eth1",
+                    "999.999.999.999/30",
+                    "R2",
+                    "eth1",
+                    "10.0.12.2/30",
+                )
             )
 
     def test_address_outside_link_subnet(self) -> None:
         with pytest.raises(ValidationError, match="not in subnet"):
             NetworkLink(
-                **_make_link("L12", "10.0.12.0/30", "R1", "eth1", "10.0.99.1/30", "R2", "eth1", "10.0.12.2/30")
+                **_make_link(
+                    "L12",
+                    "10.0.12.0/30",
+                    "R1",
+                    "eth1",
+                    "10.0.99.1/30",
+                    "R2",
+                    "eth1",
+                    "10.0.12.2/30",
+                )
             )
 
     def test_link_subnet_must_be_slash30(self) -> None:
         with pytest.raises(ValidationError, match="/30"):
             NetworkLink(
-                **_make_link("L12", "10.0.12.0/24", "R1", "eth1", "10.0.12.1/24", "R2", "eth1", "10.0.12.2/24")
+                **_make_link(
+                    "L12",
+                    "10.0.12.0/24",
+                    "R1",
+                    "eth1",
+                    "10.0.12.1/24",
+                    "R2",
+                    "eth1",
+                    "10.0.12.2/24",
+                )
             )
 
     def test_subnet_collision_rejected(self) -> None:
         data = _five_router_topology()
         data["links"].append(
-            _make_link("L99", "10.0.12.0/30", "R2", "eth3", "10.0.12.1/30", "R3", "eth3", "10.0.12.2/30")
+            _make_link(
+                "L99", "10.0.12.0/30", "R2", "eth3", "10.0.12.1/30", "R3", "eth3", "10.0.12.2/30"
+            )
         )
         with pytest.raises(ValidationError, match="Subnet collision"):
             Topology(**data)
@@ -370,11 +424,13 @@ class TestPingMeasurementValidation:
         assert ping.packet_loss_pct == 0.0
 
     def test_full_loss_valid(self) -> None:
-        ping = PingMeasurement(**self._base_ping(
-            packets_received=0,
-            packet_loss_pct=100.0,
-            collection_status=ObservationStatus.COLLECTION_FAILED,
-        ))
+        ping = PingMeasurement(
+            **self._base_ping(
+                packets_received=0,
+                packet_loss_pct=100.0,
+                collection_status=ObservationStatus.COLLECTION_FAILED,
+            )
+        )
         assert ping.packet_loss_pct == 100.0
 
     def test_packet_loss_above_100_rejected(self) -> None:
@@ -387,12 +443,16 @@ class TestPingMeasurementValidation:
 
     def test_received_exceeds_sent_rejected(self) -> None:
         with pytest.raises(ValidationError, match="packets_received"):
-            PingMeasurement(**self._base_ping(packets_sent=5, packets_received=10, packet_loss_pct=0.0))
+            PingMeasurement(
+                **self._base_ping(packets_sent=5, packets_received=10, packet_loss_pct=0.0)
+            )
 
     def test_inconsistent_loss_pct_rejected(self) -> None:
         # sent=10, received=8 implies 20% loss, but we claim 90% — inconsistent
         with pytest.raises(ValidationError, match="inconsistent"):
-            PingMeasurement(**self._base_ping(packets_sent=10, packets_received=8, packet_loss_pct=90.0))
+            PingMeasurement(
+                **self._base_ping(packets_sent=10, packets_received=8, packet_loss_pct=90.0)
+            )
 
 
 class TestObservationStatusSemantics:
@@ -433,7 +493,11 @@ class TestFaultHypothesis:
 
     def test_all_five_fault_types_valid(self) -> None:
         for ft in FaultType:
-            kind = FaultLocationKind.LINK if "LINK" in ft.value or "PACKET" in ft.value or "LATENCY" in ft.value else FaultLocationKind.ROUTER
+            kind = (
+                FaultLocationKind.LINK
+                if "LINK" in ft.value or "PACKET" in ft.value or "LATENCY" in ft.value
+                else FaultLocationKind.ROUTER
+            )
             comp_id = "L12" if kind == FaultLocationKind.LINK else "R1"
             h = FaultHypothesis(
                 hypothesis_id=f"h-{ft.value}",
@@ -508,7 +572,9 @@ class TestFaultHypothesis:
 # ===========================================================================
 
 
-def _make_diagnosis_result(status: DiagnosisStatus, top1: FaultHypothesis | None = None) -> DiagnosisResult:
+def _make_diagnosis_result(
+    status: DiagnosisStatus, top1: FaultHypothesis | None = None
+) -> DiagnosisResult:
     h1 = top1 or _make_hypothesis("h-001", score=0.85)
     h2 = _make_hypothesis("h-002", fault_type=FaultType.PACKET_LOSS, score=0.45)
 
@@ -632,23 +698,33 @@ class TestProbeRequest:
         }
 
     def test_valid_ping_probe(self) -> None:
-        probe = ProbeRequest(**{**self._base_probe(ProbeType.PING), "target_address": "192.168.255.3"})
+        probe = ProbeRequest(
+            **{**self._base_probe(ProbeType.PING), "target_address": "192.168.255.3"}
+        )
         assert probe.probe_type == ProbeType.PING
 
     def test_valid_ospf_neighbour_probe(self) -> None:
-        probe = ProbeRequest(**{**self._base_probe(ProbeType.OSPF_NEIGHBOUR), "target_router": "R2"})
+        probe = ProbeRequest(
+            **{**self._base_probe(ProbeType.OSPF_NEIGHBOUR), "target_router": "R2"}
+        )
         assert probe.probe_type == ProbeType.OSPF_NEIGHBOUR
 
     def test_valid_interface_state_probe(self) -> None:
-        probe = ProbeRequest(**{**self._base_probe(ProbeType.INTERFACE_STATE), "target_interface": "eth1"})
+        probe = ProbeRequest(
+            **{**self._base_probe(ProbeType.INTERFACE_STATE), "target_interface": "eth1"}
+        )
         assert probe.probe_type == ProbeType.INTERFACE_STATE
 
     def test_valid_routing_table_probe(self) -> None:
-        probe = ProbeRequest(**{**self._base_probe(ProbeType.ROUTING_TABLE), "target_prefix": "192.168.255.3/32"})
+        probe = ProbeRequest(
+            **{**self._base_probe(ProbeType.ROUTING_TABLE), "target_prefix": "192.168.255.3/32"}
+        )
         assert probe.probe_type == ProbeType.ROUTING_TABLE
 
     def test_valid_traceroute_probe(self) -> None:
-        probe = ProbeRequest(**{**self._base_probe(ProbeType.TRACEROUTE), "target_address": "192.168.255.5"})
+        probe = ProbeRequest(
+            **{**self._base_probe(ProbeType.TRACEROUTE), "target_address": "192.168.255.5"}
+        )
         assert probe.probe_type == ProbeType.TRACEROUTE
 
     def test_ping_without_target_address_rejected(self) -> None:
@@ -670,28 +746,34 @@ class TestProbeRequest:
     def test_timeout_hard_limit_enforced(self) -> None:
         """Timeout must not exceed MAX_PROBE_TIMEOUT_S."""
         with pytest.raises(ValidationError):
-            ProbeRequest(**{
-                **self._base_probe(ProbeType.PING),
-                "target_address": "192.168.255.3",
-                "timeout_s": MAX_PROBE_TIMEOUT_S + 1,
-            })
+            ProbeRequest(
+                **{
+                    **self._base_probe(ProbeType.PING),
+                    "target_address": "192.168.255.3",
+                    "timeout_s": MAX_PROBE_TIMEOUT_S + 1,
+                }
+            )
 
     def test_no_arbitrary_command_field_allowed(self) -> None:
         """ProbeRequest must reject unknown fields (extra='forbid')."""
         with pytest.raises(ValidationError):
-            ProbeRequest(**{
-                **self._base_probe(ProbeType.PING),
-                "target_address": "192.168.255.3",
-                "command": "show ip route",  # arbitrary — must be rejected
-            })
+            ProbeRequest(
+                **{
+                    **self._base_probe(ProbeType.PING),
+                    "target_address": "192.168.255.3",
+                    "command": "show ip route",  # arbitrary — must be rejected
+                }
+            )
 
     def test_no_script_field_allowed(self) -> None:
         with pytest.raises(ValidationError):
-            ProbeRequest(**{
-                **self._base_probe(ProbeType.PING),
-                "target_address": "192.168.255.3",
-                "script": "rm -rf /",  # must be rejected
-            })
+            ProbeRequest(
+                **{
+                    **self._base_probe(ProbeType.PING),
+                    "target_address": "192.168.255.3",
+                    "script": "rm -rf /",  # must be rejected
+                }
+            )
 
     def test_all_probe_types_exist(self) -> None:
         """All five specified ProbeType values must exist."""

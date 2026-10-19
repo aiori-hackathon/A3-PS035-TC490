@@ -1,0 +1,103 @@
+NEXORA Failover Smoke Test — 20261019T065137Z
+Link under test: L12 (R1 eth1 <-> R2 eth1)
+
+--- PRE-FAILOVER: R1 routing table ---
+Codes: K - kernel route, C - connected, S - static, R - RIP,
+       O - OSPF, I - IS-IS, B - BGP, E - EIGRP, N - NHRP,
+       T - Table, v - VNC, V - VNC-Direct, A - Babel, F - PBR,
+       f - OpenFabric,
+       > - selected route, * - FIB route, q - queued, r - rejected, b - backup
+       t - trapped, o - offload failure
+
+O   10.0.12.0/30 [110/1] is directly connected, eth1, weight 1, 00:08:04
+O   10.0.15.0/30 [110/1] is directly connected, eth2, weight 1, 00:08:04
+O>* 10.0.23.0/30 [110/2] via 10.0.12.2, eth1, weight 1, 00:07:44
+O>* 10.0.34.0/30 [110/3] via 10.0.12.2, eth1, weight 1, 00:07:39
+  *                      via 10.0.15.1, eth2, weight 1, 00:07:39
+O>* 10.0.45.0/30 [110/2] via 10.0.15.1, eth2, weight 1, 00:07:39
+O   192.168.255.1/32 [110/0] is directly connected, lo, weight 1, 00:08:04
+O>* 192.168.255.2/32 [110/1] via 10.0.12.2, eth1, weight 1, 00:07:44
+O>* 192.168.255.3/32 [110/2] via 10.0.12.2, eth1, weight 1, 00:07:44
+O>* 192.168.255.4/32 [110/2] via 10.0.15.1, eth2, weight 1, 00:07:39
+O>* 192.168.255.5/32 [110/1] via 10.0.15.1, eth2, weight 1, 00:07:39
+
+--- PRE-FAILOVER: R1 OSPF neighbors ---
+
+Neighbor ID     Pri State           Up Time         Dead Time Address         Interface                        RXmtL RqstL DBsmL
+2.2.2.2           1 Full/-          7m54s             35.977s 10.0.12.2       eth1:10.0.12.1                       0     0     0
+5.5.5.5           1 Full/-          7m49s             36.051s 10.0.15.1       eth2:10.0.15.2                       0     0     0
+
+
+--- INJECTING FAULT: disabling eth1 on nexora-r1 ---
+eth1 DOWN on nexora-r1
+Waiting 60s for OSPF reconvergence...
+
+--- POST-FAILOVER: R1 OSPF neighbors ---
+
+Neighbor ID     Pri State           Up Time         Dead Time Address         Interface                        RXmtL RqstL DBsmL
+5.5.5.5           1 Full/-          8m49s             35.920s 10.0.15.1       eth2:10.0.15.2                       0     0     0
+
+
+--- POST-FAILOVER: R1 routing table ---
+Codes: K - kernel route, C - connected, S - static, R - RIP,
+       O - OSPF, I - IS-IS, B - BGP, E - EIGRP, N - NHRP,
+       T - Table, v - VNC, V - VNC-Direct, A - Babel, F - PBR,
+       f - OpenFabric,
+       > - selected route, * - FIB route, q - queued, r - rejected, b - backup
+       t - trapped, o - offload failure
+
+O>* 10.0.12.0/30 [110/5] via 10.0.15.1, eth2, weight 1, 00:01:01
+O   10.0.15.0/30 [110/1] is directly connected, eth2, weight 1, 00:09:05
+O>* 10.0.23.0/30 [110/4] via 10.0.15.1, eth2, weight 1, 00:01:01
+O>* 10.0.34.0/30 [110/3] via 10.0.15.1, eth2, weight 1, 00:01:01
+O>* 10.0.45.0/30 [110/2] via 10.0.15.1, eth2, weight 1, 00:08:40
+O   192.168.255.1/32 [110/0] is directly connected, lo, weight 1, 00:09:05
+O>* 192.168.255.2/32 [110/4] via 10.0.15.1, eth2, weight 1, 00:01:01
+O>* 192.168.255.3/32 [110/3] via 10.0.15.1, eth2, weight 1, 00:01:01
+O>* 192.168.255.4/32 [110/2] via 10.0.15.1, eth2, weight 1, 00:08:40
+O>* 192.168.255.5/32 [110/1] via 10.0.15.1, eth2, weight 1, 00:08:40
+
+--- Alternate path test: R1 -> 192.168.255.2 (R2 loopback) ---
+PING 192.168.255.2 (192.168.255.2): 56 data bytes
+64 bytes from 192.168.255.2: seq=0 ttl=61 time=0.229 ms
+64 bytes from 192.168.255.2: seq=1 ttl=61 time=0.278 ms
+64 bytes from 192.168.255.2: seq=2 ttl=61 time=0.260 ms
+64 bytes from 192.168.255.2: seq=3 ttl=61 time=0.513 ms
+
+--- 192.168.255.2 ping statistics ---
+4 packets transmitted, 4 packets received, 0% packet loss
+round-trip min/avg/max = 0.229/0.320/0.513 ms
+ALTERNATE PATH: REACHABLE
+
+--- RESTORING FAULT: re-enabling eth1 on nexora-r1 ---
+eth1 UP on nexora-r1
+Waiting 60s for OSPF re-convergence...
+
+--- POST-RESTORE: R1 OSPF neighbors ---
+
+Neighbor ID     Pri State           Up Time         Dead Time Address         Interface                        RXmtL RqstL DBsmL
+5.5.5.5           1 Full/-          9m52s             32.513s 10.0.15.1       eth2:10.0.15.2                       0     0     0
+2.2.2.2           1 Full/-          57.579s           32.426s 10.0.12.2       eth1:10.0.12.1                       0     0     0
+
+
+--- POST-RESTORE: R1 routing table ---
+Codes: K - kernel route, C - connected, S - static, R - RIP,
+       O - OSPF, I - IS-IS, B - BGP, E - EIGRP, N - NHRP,
+       T - Table, v - VNC, V - VNC-Direct, A - Babel, F - PBR,
+       f - OpenFabric,
+       > - selected route, * - FIB route, q - queued, r - rejected, b - backup
+       t - trapped, o - offload failure
+
+O   10.0.12.0/30 [110/1] is directly connected, eth1, weight 1, 00:01:00
+O   10.0.15.0/30 [110/1] is directly connected, eth2, weight 1, 00:10:08
+O>* 10.0.23.0/30 [110/2] via 10.0.12.2, eth1, weight 1, 00:00:58
+O>* 10.0.34.0/30 [110/3] via 10.0.12.2, eth1, weight 1, 00:00:58
+  *                      via 10.0.15.1, eth2, weight 1, 00:00:58
+O>* 10.0.45.0/30 [110/2] via 10.0.15.1, eth2, weight 1, 00:09:43
+O   192.168.255.1/32 [110/0] is directly connected, lo, weight 1, 00:10:08
+O>* 192.168.255.2/32 [110/1] via 10.0.12.2, eth1, weight 1, 00:00:58
+O>* 192.168.255.3/32 [110/2] via 10.0.12.2, eth1, weight 1, 00:00:58
+O>* 192.168.255.4/32 [110/2] via 10.0.15.1, eth2, weight 1, 00:09:43
+O>* 192.168.255.5/32 [110/1] via 10.0.15.1, eth2, weight 1, 00:09:43
+
+Failover test complete. Report saved to: /Users/azriel/Documents/projects/AIORI project/Nexora/lab/../docs/phase-reports/failover-20261019T065137Z.txt

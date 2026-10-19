@@ -70,6 +70,7 @@ class FaultLocation(BaseModel):
     def validate_kind_matches_component_id(self) -> FaultLocation:
         if self.kind == FaultLocationKind.ROUTER:
             import re
+
             if not re.match(r"^R[1-9][0-9]*$", self.component_id):
                 raise ValueError(
                     f"FaultLocation kind=ROUTER but component_id {self.component_id!r} "
@@ -77,6 +78,7 @@ class FaultLocation(BaseModel):
                 )
         elif self.kind == FaultLocationKind.LINK:
             import re
+
             if not re.match(r"^L[0-9]{2,}$", self.component_id):
                 raise ValueError(
                     f"FaultLocation kind=LINK but component_id {self.component_id!r} "
@@ -154,7 +156,5 @@ class FaultHypothesis(BaseModel):
         contradictory = set(self.contradictory_evidence_ids)
         overlap = supporting & contradictory
         if overlap:
-            raise ValueError(
-                f"Evidence IDs cannot be both supporting and contradictory: {overlap}"
-            )
+            raise ValueError(f"Evidence IDs cannot be both supporting and contradictory: {overlap}")
         return self

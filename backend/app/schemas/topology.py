@@ -171,18 +171,14 @@ class Router(BaseModel):
         # Loopback addresses must be /32
         iface = ipaddress.IPv4Interface(parsed)
         if iface.network.prefixlen != 32:
-            raise ValueError(
-                f"Loopback address must be /32, got /{iface.network.prefixlen}"
-            )
+            raise ValueError(f"Loopback address must be /32, got /{iface.network.prefixlen}")
         return parsed
 
     @model_validator(mode="after")
     def validate_no_duplicate_interface_names(self) -> Router:
         names = [iface.interface_name for iface in self.interfaces]
         if len(names) != len(set(names)):
-            raise ValueError(
-                f"Router {self.router_id} has duplicate interface names: {names}"
-            )
+            raise ValueError(f"Router {self.router_id} has duplicate interface names: {names}")
         return self
 
 
@@ -238,9 +234,7 @@ class NetworkLink(BaseModel):
         except ValueError as exc:
             raise ValueError(f"Invalid IPv4 subnet: {v!r}") from exc
         if net.prefixlen != 30:
-            raise ValueError(
-                f"P2P link subnets must be /30; got /{net.prefixlen} for {v!r}"
-            )
+            raise ValueError(f"P2P link subnets must be /30; got /{net.prefixlen} for {v!r}")
         return str(net)
 
     @field_validator("address_a", "address_b", mode="before")

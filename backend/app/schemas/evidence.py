@@ -139,8 +139,7 @@ class EvidenceRecord(BaseModel):
     def validate_utc_aware(cls, v: Any) -> Any:
         if isinstance(v, datetime) and v.tzinfo is None:
             raise ValueError(
-                "Timestamps must be timezone-aware UTC datetimes. "
-                f"Got naive datetime: {v!r}"
+                f"Timestamps must be timezone-aware UTC datetimes. Got naive datetime: {v!r}"
             )
         return v
 
@@ -212,8 +211,7 @@ class OSPFObservation(EvidenceRecord):
         description="IP address of the observed OSPF neighbour interface.",
     )
     adjacency_state: str = Field(
-        description="OSPF adjacency state string as reported by FRR "
-        "(e.g. 'Full', 'Down', 'Init').",
+        description="OSPF adjacency state string as reported by FRR (e.g. 'Full', 'Down', 'Init').",
         max_length=32,
     )
     dead_timer_remaining_s: float | None = Field(
@@ -277,9 +275,7 @@ class PingMeasurement(EvidenceRecord):
     def validate_received_le_sent(cls, v: int, info: Any) -> int:
         sent = info.data.get("packets_sent")
         if sent is not None and v > sent:
-            raise ValueError(
-                f"packets_received ({v}) cannot exceed packets_sent ({sent})"
-            )
+            raise ValueError(f"packets_received ({v}) cannot exceed packets_sent ({sent})")
         return v
 
     @field_validator("packet_loss_pct")
@@ -318,8 +314,7 @@ class RouteObservation(EvidenceRecord):
     )
     route_type: str = Field(
         description=(
-            "Route protocol type as reported by FRR "
-            "(e.g. 'O' for OSPF, 'C' for connected)."
+            "Route protocol type as reported by FRR (e.g. 'O' for OSPF, 'C' for connected)."
         ),
         max_length=8,
     )

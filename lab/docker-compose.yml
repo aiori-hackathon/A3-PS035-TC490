@@ -1,0 +1,230 @@
+# NEXORA — Five-Router FRRouting OSPF Ring Lab
+# Team: A3-PS035-TC490 | Problem Statement: PS-035
+#
+# Topology: R1 — R2 — R3 — R4 — R5 — R1 (ring)
+# Phase 01 addressing plan — exact specification from docs/architecture/topology.md:
+#
+# Data-plane IPs:
+#   L12: R1-eth1=10.0.12.1/30   R2-eth1=10.0.12.2/30
+#   L23: R2-eth2=10.0.23.1/30   R3-eth1=10.0.23.2/30
+#   L34: R3-eth2=10.0.34.1/30   R4-eth1=10.0.34.2/30
+#   L45: R4-eth2=10.0.45.1/30   R5-eth1=10.0.45.2/30
+#   L51: R5-eth2=10.0.15.1/30   R1-eth2=10.0.15.2/30
+# Loopbacks (lo): 192.168.255.x/32
+# Management (eth0): 192.168.100.x/24 (OSPF passive)
+#
+# Docker bridge IPAM uses 172.31.x.x to avoid conflicts with pre-existing
+# 10.0.x.x networks on the host (e.g. FaultLens).
+# configure.sh normalizes interfaces at startup so eth0=mgmt, eth1=link1, eth2=link2.
+
+name: nexora
+
+services:
+  r1:
+    image: frrouting/frr:latest
+    platform: linux/amd64
+    container_name: nexora-r1
+    hostname: r1
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv4.conf.all.rp_filter=0
+    entrypoint: ["/sbin/tini", "--", "/startup/configure.sh"]
+    environment:
+      - MATCH1=172.31.12.
+      - IP1=10.0.12.1/30
+      - MATCH2=172.31.51.
+      - IP2=10.0.15.2/30
+      - MGMT_MATCH=192.168.100.
+      - LOOPBACK_IP=192.168.255.1/32
+    networks:
+      net_l12:
+        ipv4_address: 172.31.12.1
+      net_l51:
+        ipv4_address: 172.31.51.2
+      mgmt:
+        ipv4_address: 192.168.100.1
+    volumes:
+      - ./configs/r1:/etc/frr:ro
+      - ./scripts/configure.sh:/startup/configure.sh:ro
+    restart: unless-stopped
+
+  r2:
+    image: frrouting/frr:latest
+    platform: linux/amd64
+    container_name: nexora-r2
+    hostname: r2
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv4.conf.all.rp_filter=0
+    entrypoint: ["/sbin/tini", "--", "/startup/configure.sh"]
+    environment:
+      - MATCH1=172.31.12.
+      - IP1=10.0.12.2/30
+      - MATCH2=172.31.23.
+      - IP2=10.0.23.1/30
+      - MGMT_MATCH=192.168.100.
+      - LOOPBACK_IP=192.168.255.2/32
+    networks:
+      net_l12:
+        ipv4_address: 172.31.12.2
+      net_l23:
+        ipv4_address: 172.31.23.1
+      mgmt:
+        ipv4_address: 192.168.100.2
+    volumes:
+      - ./configs/r2:/etc/frr:ro
+      - ./scripts/configure.sh:/startup/configure.sh:ro
+    restart: unless-stopped
+
+  r3:
+    image: frrouting/frr:latest
+    platform: linux/amd64
+    container_name: nexora-r3
+    hostname: r3
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv4.conf.all.rp_filter=0
+    entrypoint: ["/sbin/tini", "--", "/startup/configure.sh"]
+    environment:
+      - MATCH1=172.31.23.
+      - IP1=10.0.23.2/30
+      - MATCH2=172.31.34.
+      - IP2=10.0.34.1/30
+      - MGMT_MATCH=192.168.100.
+      - LOOPBACK_IP=192.168.255.3/32
+    networks:
+      net_l23:
+        ipv4_address: 172.31.23.2
+      net_l34:
+        ipv4_address: 172.31.34.1
+      mgmt:
+        ipv4_address: 192.168.100.3
+    volumes:
+      - ./configs/r3:/etc/frr:ro
+      - ./scripts/configure.sh:/startup/configure.sh:ro
+    restart: unless-stopped
+
+  r4:
+    image: frrouting/frr:latest
+    platform: linux/amd64
+    container_name: nexora-r4
+    hostname: r4
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv4.conf.all.rp_filter=0
+    entrypoint: ["/sbin/tini", "--", "/startup/configure.sh"]
+    environment:
+      - MATCH1=172.31.34.
+      - IP1=10.0.34.2/30
+      - MATCH2=172.31.45.
+      - IP2=10.0.45.1/30
+      - MGMT_MATCH=192.168.100.
+      - LOOPBACK_IP=192.168.255.4/32
+    networks:
+      net_l34:
+        ipv4_address: 172.31.34.2
+      net_l45:
+        ipv4_address: 172.31.45.1
+      mgmt:
+        ipv4_address: 192.168.100.4
+    volumes:
+      - ./configs/r4:/etc/frr:ro
+      - ./scripts/configure.sh:/startup/configure.sh:ro
+    restart: unless-stopped
+
+  r5:
+    image: frrouting/frr:latest
+    platform: linux/amd64
+    container_name: nexora-r5
+    hostname: r5
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv4.conf.all.rp_filter=0
+    entrypoint: ["/sbin/tini", "--", "/startup/configure.sh"]
+    environment:
+      - MATCH1=172.31.45.
+      - IP1=10.0.45.2/30
+      - MATCH2=172.31.51.
+      - IP2=10.0.15.1/30
+      - MGMT_MATCH=192.168.100.
+      - LOOPBACK_IP=192.168.255.5/32
+    networks:
+      net_l45:
+        ipv4_address: 172.31.45.2
+      net_l51:
+        ipv4_address: 172.31.51.1
+      mgmt:
+        ipv4_address: 192.168.100.5
+    volumes:
+      - ./configs/r5:/etc/frr:ro
+      - ./scripts/configure.sh:/startup/configure.sh:ro
+    restart: unless-stopped
+
+networks:
+  # L12: R1-eth1 <-> R2-eth1
+  net_l12:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.31.12.0/29
+          gateway: 172.31.12.6
+
+  # L23: R2-eth2 <-> R3-eth1
+  net_l23:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.31.23.0/29
+          gateway: 172.31.23.6
+
+  # L34: R3-eth2 <-> R4-eth1
+  net_l34:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.31.34.0/29
+          gateway: 172.31.34.6
+
+  # L45: R4-eth2 <-> R5-eth1
+  net_l45:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.31.45.0/29
+          gateway: 172.31.45.6
+
+  # L51: R5-eth2 <-> R1-eth2
+  net_l51:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.31.51.0/29
+          gateway: 172.31.51.6
+
+  # Management — OSPF passive on all routers
+  mgmt:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.100.0/24
+          gateway: 192.168.100.254

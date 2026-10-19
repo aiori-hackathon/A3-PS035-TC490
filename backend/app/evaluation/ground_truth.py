@@ -101,9 +101,7 @@ class FaultInjectionRecord(BaseModel):
     @classmethod
     def validate_utc_aware(cls, v: Any) -> Any:
         if isinstance(v, datetime) and v.tzinfo is None:
-            raise ValueError(
-                "FaultInjectionRecord timestamps must be timezone-aware UTC datetimes"
-            )
+            raise ValueError("FaultInjectionRecord timestamps must be timezone-aware UTC datetimes")
         return v
 
     def is_ground_truth_label_safe_for_inference(self) -> bool:

@@ -116,9 +116,7 @@ class Incident(BaseModel):
             self.collection_window_end is not None
             and self.collection_window_end < self.collection_window_start
         ):
-            raise ValueError(
-                "collection_window_end must be >= collection_window_start"
-            )
+            raise ValueError("collection_window_end must be >= collection_window_start")
         return self
 
     @model_validator(mode="after")
