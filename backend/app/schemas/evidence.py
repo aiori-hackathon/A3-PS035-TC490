@@ -36,6 +36,7 @@ class EvidenceSourceType(str, Enum):
     ROUTING_TABLE = "ROUTING_TABLE"
     INTERFACE_POLL = "INTERFACE_POLL"
     OPERATOR_ANNOTATION = "OPERATOR_ANNOTATION"
+    ACTIVE_TRACEROUTE = "ACTIVE_TRACEROUTE"
 
 
 class CollectionMethod(str, Enum):
@@ -327,3 +328,56 @@ class RouteObservation(EvidenceRecord):
         description="True if this route was present in the RIB at observation time. "
         "False if it was expected but absent.",
     )
+
+
+class TracerouteHop(BaseModel):
+    """A single hop observed in an active traceroute probe."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    hop_number: int = Field(
+        ge=1,
+        description="Hop index, 1-based.",
+    )
+    hop_address: str | None = Field(
+        default=None,
+        description="IP address of responding router interface. None if unresponsive.",
+    )
+    rtt_ms: float | None = Field(
+        default=None,
+        ge=0.0,
+        description="Round-trip time in milliseconds. None if unresponsive.",
+    )
+    is_unreachable: bool = Field(
+        default=False,
+        description="True if hop timed out or ICMP unreachable.",
+    )
+
+
+class TracerouteObservation(EvidenceRecord):
+    """Result of a bounded diagnostic traceroute probe."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    target_address: str = Field(
+        description="Destination IPv4 address that was traced.",
+        max_length=45,
+    )
+    probe_source: str = Field(
+        description="Router ID that executed this traceroute.",
+        pattern=r"^R[1-9][0-9]*$",
+    )
+    hops: list[TracerouteHop] = Field(
+        default_factory=list,
+        description="Observed hops along the path.",
+    )
+    total_hops: int = Field(
+        default=0,
+        ge=0,
+        description="Number of observed hops.",
+    )
+    destination_reached: bool = Field(
+        default=False,
+        description="Whether the target destination was reached.",
+    )
+
