@@ -1,0 +1,440 @@
+{
+  "anomalous_record_count": 8,
+  "correlation_notes": [
+    "Removed 52 logically duplicate records before correlation."
+  ],
+  "duplicate_records_removed": 52,
+  "engine_version": "nexora-correlation-v0.5.0",
+  "ground_truth_isolation_verified": true,
+  "incidents": [
+    {
+      "affected_links": [],
+      "affected_routers": [
+        "R3"
+      ],
+      "contradictory_observations": [],
+      "correlation_explanation": "Incident ci-20261020-001 was formed by the correlation engine (version nexora-correlation-v0.5.0).\n\nAffected routers: R3.\nAffected links: none identified.\nTotal symptoms: 8.\n\nObserved symptoms:\n  1. [COLLECTION_FAILURE] Evidence collection failed for R3 (ROUTER_UNAVAILABLE). Component state is UNKNOWN, not necessarily DOWN.\n  2. [COLLECTION_FAILURE] Evidence collection failed for R3 (ROUTER_UNAVAILABLE). Component state is UNKNOWN, not necessarily DOWN.\n  3. [COLLECTION_FAILURE] Evidence collection failed for R3 (ROUTER_UNAVAILABLE). Component state is UNKNOWN, not necessarily DOWN.\n  4. [COLLECTION_FAILURE] Evidence collection failed for R3 (ROUTER_UNAVAILABLE). Component state is UNKNOWN, not necessarily DOWN.\n  5. [COLLECTION_FAILURE] Evidence collection failed for R3 (ROUTER_UNAVAILABLE). Component state is UNKNOWN, not necessarily DOWN.\n  6. [COLLECTION_FAILURE] Evidence collection failed for R3 (ROUTER_UNAVAILABLE). Component state is UNKNOWN, not necessarily DOWN.\n  7. [COLLECTION_FAILURE] Evidence collection failed for R3 (PROBE_SOURCE_UNAVAILABLE). Component state is UNKNOWN, not necessarily DOWN.\n  8. [COLLECTION_FAILURE] Evidence collection failed for R3 (PROBE_SOURCE_UNAVAILABLE). Component state is UNKNOWN, not necessarily DOWN.\n\nCorrelation relationships:\n  - SHARED_ROUTER: Symptoms share router(s) R3. Both observations originate from or implicate the same router.\n  - SHARED_ROUTER: Symptoms share router(s) R3. Both observations originate from or implicate the same router.\n  - SHARED_ROUTER: Symptoms share router(s) R3. Both observations originate from or implicate the same router.\n  - SHARED_ROUTER: Symptoms share router(s) R3. Both observations originate from or implicate the same router.\n  - SHARED_ROUTER: Symptoms share router(s) R3. Both observations originate from or implicate the same router.\n\nGrouping rationale: Symptoms were grouped because they involve topologically adjacent or shared network components and fall within the same observation window.\n\nIMPORTANT: This is a correlation result, not a root-cause diagnosis. The actual fault type and location will be determined in Phase 06 by the hypothesis ranking and rule-based scoring engine.",
+      "correlation_window_end": "2026-10-19T19:04:17.474015Z",
+      "correlation_window_start": "2026-10-19T19:02:22.641848Z",
+      "engine_version": "nexora-correlation-v0.5.0",
+      "evidence_ids": [
+        "ev-interface-r3-1792436587781-57860c-eth1",
+        "ev-interface-r3-1792436587781-70d330-eth2",
+        "ev-interface-r3-1792436587781-fa32ce-lo",
+        "ev-ospf-r3-1792436588128-4fd10c-2-2-2-2",
+        "ev-ospf-r3-1792436588128-db12dc-4-4-4-4",
+        "ev-ping-r3-1792436597972-6d6fa0-to-192-168-255-4",
+        "ev-routing-r3-1792436588601-041cf4-192-168-255-1-32",
+        "ev-traceroute-r3-1792436612474-14fb4e-trace-to-192-168-255-3"
+      ],
+      "incident_id": "ci-20261020-001",
+      "missing_information": [
+        "Evidence collection failed for: R3. Observations from these routers are incomplete.",
+        "Router(s) R3 appear DOWN. Evidence from their perspective cannot be collected."
+      ],
+      "relationships": [
+        {
+          "explanation": "Symptoms share router(s) R3. Both observations originate from or implicate the same router.",
+          "from_component": "R3",
+          "relationship_kind": "SHARED_ROUTER",
+          "supporting_evidence_ids": [
+            "ev-interface-r3-1792436587781-fa32ce-lo",
+            "ev-interface-r3-1792436587781-57860c-eth1"
+          ],
+          "to_component": "R3"
+        },
+        {
+          "explanation": "Symptoms share router(s) R3. Both observations originate from or implicate the same router.",
+          "from_component": "R3",
+          "relationship_kind": "SHARED_ROUTER",
+          "supporting_evidence_ids": [
+            "ev-interface-r3-1792436587781-fa32ce-lo",
+            "ev-interface-r3-1792436587781-70d330-eth2"
+          ],
+          "to_component": "R3"
+        },
+        {
+          "explanation": "Symptoms share router(s) R3. Both observations originate from or implicate the same router.",
+          "from_component": "R3",
+          "relationship_kind": "SHARED_ROUTER",
+          "supporting_evidence_ids": [
+            "ev-interface-r3-1792436587781-fa32ce-lo",
+            "ev-ospf-r3-1792436588128-4fd10c-2-2-2-2"
+          ],
+          "to_component": "R3"
+        },
+        {
+          "explanation": "Symptoms share router(s) R3. Both observations originate from or implicate the same router.",
+          "from_component": "R3",
+          "relationship_kind": "SHARED_ROUTER",
+          "supporting_evidence_ids": [
+            "ev-interface-r3-1792436587781-fa32ce-lo",
+            "ev-ospf-r3-1792436588128-db12dc-4-4-4-4"
+          ],
+          "to_component": "R3"
+        },
+        {
+          "explanation": "Symptoms share router(s) R3. Both observations originate from or implicate the same router.",
+          "from_component": "R3",
+          "relationship_kind": "SHARED_ROUTER",
+          "supporting_evidence_ids": [
+            "ev-interface-r3-1792436587781-fa32ce-lo",
+            "ev-routing-r3-1792436588601-041cf4-192-168-255-1-32"
+          ],
+          "to_component": "R3"
+        },
+        {
+          "explanation": "Symptoms share router(s) R3. Both observations originate from or implicate the same router.",
+          "from_component": "R3",
+          "relationship_kind": "SHARED_ROUTER",
+          "supporting_evidence_ids": [
+            "ev-interface-r3-1792436587781-fa32ce-lo",
+            "ev-ping-r3-1792436597972-6d6fa0-to-192-168-255-4"
+          ],
+          "to_component": "R3"
+        },
+        {
+          "explanation": "Symptoms share router(s) R3. Both observations originate from or implicate the same router.",
+          "from_component": "R3",
+          "relationship_kind": "SHARED_ROUTER",
+          "supporting_evidence_ids": [
+            "ev-interface-r3-1792436587781-fa32ce-lo",
+            "ev-traceroute-r3-1792436612474-14fb4e-trace-to-192-168-255-3"
+          ],
+          "to_component": "R3"
+        },
+        {
+          "explanation": "Symptoms share router(s) R3. Both observations originate from or implicate the same router.",
+          "from_component": "R3",
+          "relationship_kind": "SHARED_ROUTER",
+          "supporting_evidence_ids": [
+            "ev-interface-r3-1792436587781-57860c-eth1",
+            "ev-interface-r3-1792436587781-70d330-eth2"
+          ],
+          "to_component": "R3"
+        },
+        {
+          "explanation": "Symptoms share router(s) R3. Both observations originate from or implicate the same router.",
+          "from_component": "R3",
+          "relationship_kind": "SHARED_ROUTER",
+          "supporting_evidence_ids": [
+            "ev-interface-r3-1792436587781-57860c-eth1",
+            "ev-ospf-r3-1792436588128-4fd10c-2-2-2-2"
+          ],
+          "to_component": "R3"
+        },
+        {
+          "explanation": "Symptoms share router(s) R3. Both observations originate from or implicate the same router.",
+          "from_component": "R3",
+          "relationship_kind": "SHARED_ROUTER",
+          "supporting_evidence_ids": [
+            "ev-interface-r3-1792436587781-57860c-eth1",
+            "ev-ospf-r3-1792436588128-db12dc-4-4-4-4"
+          ],
+          "to_component": "R3"
+        },
+        {
+          "explanation": "Symptoms share router(s) R3. Both observations originate from or implicate the same router.",
+          "from_component": "R3",
+          "relationship_kind": "SHARED_ROUTER",
+          "supporting_evidence_ids": [
+            "ev-interface-r3-1792436587781-57860c-eth1",
+            "ev-routing-r3-1792436588601-041cf4-192-168-255-1-32"
+          ],
+          "to_component": "R3"
+        },
+        {
+          "explanation": "Symptoms share router(s) R3. Both observations originate from or implicate the same router.",
+          "from_component": "R3",
+          "relationship_kind": "SHARED_ROUTER",
+          "supporting_evidence_ids": [
+            "ev-interface-r3-1792436587781-57860c-eth1",
+            "ev-ping-r3-1792436597972-6d6fa0-to-192-168-255-4"
+          ],
+          "to_component": "R3"
+        },
+        {
+          "explanation": "Symptoms share router(s) R3. Both observations originate from or implicate the same router.",
+          "from_component": "R3",
+          "relationship_kind": "SHARED_ROUTER",
+          "supporting_evidence_ids": [
+            "ev-interface-r3-1792436587781-57860c-eth1",
+            "ev-traceroute-r3-1792436612474-14fb4e-trace-to-192-168-255-3"
+          ],
+          "to_component": "R3"
+        },
+        {
+          "explanation": "Symptoms share router(s) R3. Both observations originate from or implicate the same router.",
+          "from_component": "R3",
+          "relationship_kind": "SHARED_ROUTER",
+          "supporting_evidence_ids": [
+            "ev-interface-r3-1792436587781-70d330-eth2",
+            "ev-ospf-r3-1792436588128-4fd10c-2-2-2-2"
+          ],
+          "to_component": "R3"
+        },
+        {
+          "explanation": "Symptoms share router(s) R3. Both observations originate from or implicate the same router.",
+          "from_component": "R3",
+          "relationship_kind": "SHARED_ROUTER",
+          "supporting_evidence_ids": [
+            "ev-interface-r3-1792436587781-70d330-eth2",
+            "ev-ospf-r3-1792436588128-db12dc-4-4-4-4"
+          ],
+          "to_component": "R3"
+        },
+        {
+          "explanation": "Symptoms share router(s) R3. Both observations originate from or implicate the same router.",
+          "from_component": "R3",
+          "relationship_kind": "SHARED_ROUTER",
+          "supporting_evidence_ids": [
+            "ev-interface-r3-1792436587781-70d330-eth2",
+            "ev-routing-r3-1792436588601-041cf4-192-168-255-1-32"
+          ],
+          "to_component": "R3"
+        },
+        {
+          "explanation": "Symptoms share router(s) R3. Both observations originate from or implicate the same router.",
+          "from_component": "R3",
+          "relationship_kind": "SHARED_ROUTER",
+          "supporting_evidence_ids": [
+            "ev-interface-r3-1792436587781-70d330-eth2",
+            "ev-ping-r3-1792436597972-6d6fa0-to-192-168-255-4"
+          ],
+          "to_component": "R3"
+        },
+        {
+          "explanation": "Symptoms share router(s) R3. Both observations originate from or implicate the same router.",
+          "from_component": "R3",
+          "relationship_kind": "SHARED_ROUTER",
+          "supporting_evidence_ids": [
+            "ev-interface-r3-1792436587781-70d330-eth2",
+            "ev-traceroute-r3-1792436612474-14fb4e-trace-to-192-168-255-3"
+          ],
+          "to_component": "R3"
+        },
+        {
+          "explanation": "Symptoms share router(s) R3. Both observations originate from or implicate the same router.",
+          "from_component": "R3",
+          "relationship_kind": "SHARED_ROUTER",
+          "supporting_evidence_ids": [
+            "ev-ospf-r3-1792436588128-4fd10c-2-2-2-2",
+            "ev-ospf-r3-1792436588128-db12dc-4-4-4-4"
+          ],
+          "to_component": "R3"
+        },
+        {
+          "explanation": "Symptoms share router(s) R3. Both observations originate from or implicate the same router.",
+          "from_component": "R3",
+          "relationship_kind": "SHARED_ROUTER",
+          "supporting_evidence_ids": [
+            "ev-ospf-r3-1792436588128-4fd10c-2-2-2-2",
+            "ev-routing-r3-1792436588601-041cf4-192-168-255-1-32"
+          ],
+          "to_component": "R3"
+        },
+        {
+          "explanation": "Symptoms share router(s) R3. Both observations originate from or implicate the same router.",
+          "from_component": "R3",
+          "relationship_kind": "SHARED_ROUTER",
+          "supporting_evidence_ids": [
+            "ev-ospf-r3-1792436588128-4fd10c-2-2-2-2",
+            "ev-ping-r3-1792436597972-6d6fa0-to-192-168-255-4"
+          ],
+          "to_component": "R3"
+        },
+        {
+          "explanation": "Symptoms share router(s) R3. Both observations originate from or implicate the same router.",
+          "from_component": "R3",
+          "relationship_kind": "SHARED_ROUTER",
+          "supporting_evidence_ids": [
+            "ev-ospf-r3-1792436588128-4fd10c-2-2-2-2",
+            "ev-traceroute-r3-1792436612474-14fb4e-trace-to-192-168-255-3"
+          ],
+          "to_component": "R3"
+        },
+        {
+          "explanation": "Symptoms share router(s) R3. Both observations originate from or implicate the same router.",
+          "from_component": "R3",
+          "relationship_kind": "SHARED_ROUTER",
+          "supporting_evidence_ids": [
+            "ev-ospf-r3-1792436588128-db12dc-4-4-4-4",
+            "ev-routing-r3-1792436588601-041cf4-192-168-255-1-32"
+          ],
+          "to_component": "R3"
+        },
+        {
+          "explanation": "Symptoms share router(s) R3. Both observations originate from or implicate the same router.",
+          "from_component": "R3",
+          "relationship_kind": "SHARED_ROUTER",
+          "supporting_evidence_ids": [
+            "ev-ospf-r3-1792436588128-db12dc-4-4-4-4",
+            "ev-ping-r3-1792436597972-6d6fa0-to-192-168-255-4"
+          ],
+          "to_component": "R3"
+        },
+        {
+          "explanation": "Symptoms share router(s) R3. Both observations originate from or implicate the same router.",
+          "from_component": "R3",
+          "relationship_kind": "SHARED_ROUTER",
+          "supporting_evidence_ids": [
+            "ev-ospf-r3-1792436588128-db12dc-4-4-4-4",
+            "ev-traceroute-r3-1792436612474-14fb4e-trace-to-192-168-255-3"
+          ],
+          "to_component": "R3"
+        },
+        {
+          "explanation": "Symptoms share router(s) R3. Both observations originate from or implicate the same router.",
+          "from_component": "R3",
+          "relationship_kind": "SHARED_ROUTER",
+          "supporting_evidence_ids": [
+            "ev-routing-r3-1792436588601-041cf4-192-168-255-1-32",
+            "ev-ping-r3-1792436597972-6d6fa0-to-192-168-255-4"
+          ],
+          "to_component": "R3"
+        },
+        {
+          "explanation": "Symptoms share router(s) R3. Both observations originate from or implicate the same router.",
+          "from_component": "R3",
+          "relationship_kind": "SHARED_ROUTER",
+          "supporting_evidence_ids": [
+            "ev-routing-r3-1792436588601-041cf4-192-168-255-1-32",
+            "ev-traceroute-r3-1792436612474-14fb4e-trace-to-192-168-255-3"
+          ],
+          "to_component": "R3"
+        },
+        {
+          "explanation": "Symptoms share router(s) R3. Both observations originate from or implicate the same router.",
+          "from_component": "R3",
+          "relationship_kind": "SHARED_ROUTER",
+          "supporting_evidence_ids": [
+            "ev-ping-r3-1792436597972-6d6fa0-to-192-168-255-4",
+            "ev-traceroute-r3-1792436612474-14fb4e-trace-to-192-168-255-3"
+          ],
+          "to_component": "R3"
+        }
+      ],
+      "status": "GROUPED",
+      "supporting_observations": [
+        "COLLECTION_FAILURE: Evidence collection failed for R3 (ROUTER_UNAVAILABLE). Component state is UNKNOWN, not necessarily DOWN.",
+        "COLLECTION_FAILURE: Evidence collection failed for R3 (ROUTER_UNAVAILABLE). Component state is UNKNOWN, not necessarily DOWN.",
+        "COLLECTION_FAILURE: Evidence collection failed for R3 (ROUTER_UNAVAILABLE). Component state is UNKNOWN, not necessarily DOWN.",
+        "COLLECTION_FAILURE: Evidence collection failed for R3 (ROUTER_UNAVAILABLE). Component state is UNKNOWN, not necessarily DOWN.",
+        "COLLECTION_FAILURE: Evidence collection failed for R3 (ROUTER_UNAVAILABLE). Component state is UNKNOWN, not necessarily DOWN.",
+        "COLLECTION_FAILURE: Evidence collection failed for R3 (ROUTER_UNAVAILABLE). Component state is UNKNOWN, not necessarily DOWN.",
+        "COLLECTION_FAILURE: Evidence collection failed for R3 (PROBE_SOURCE_UNAVAILABLE). Component state is UNKNOWN, not necessarily DOWN.",
+        "COLLECTION_FAILURE: Evidence collection failed for R3 (PROBE_SOURCE_UNAVAILABLE). Component state is UNKNOWN, not necessarily DOWN."
+      ],
+      "symptoms": [
+        {
+          "affected_component": "R3",
+          "category": "COLLECTION_FAILURE",
+          "description": "Evidence collection failed for R3 (ROUTER_UNAVAILABLE). Component state is UNKNOWN, not necessarily DOWN.",
+          "is_direct_observation": false,
+          "measurement_value": null,
+          "observed_at": "2026-10-19T19:03:07.641848Z",
+          "supporting_evidence_ids": [
+            "ev-interface-r3-1792436587781-fa32ce-lo"
+          ],
+          "symptom_id": "sym-0001",
+          "threshold_used": null
+        },
+        {
+          "affected_component": "R3",
+          "category": "COLLECTION_FAILURE",
+          "description": "Evidence collection failed for R3 (ROUTER_UNAVAILABLE). Component state is UNKNOWN, not necessarily DOWN.",
+          "is_direct_observation": false,
+          "measurement_value": null,
+          "observed_at": "2026-10-19T19:03:07.641848Z",
+          "supporting_evidence_ids": [
+            "ev-interface-r3-1792436587781-57860c-eth1"
+          ],
+          "symptom_id": "sym-0002",
+          "threshold_used": null
+        },
+        {
+          "affected_component": "R3",
+          "category": "COLLECTION_FAILURE",
+          "description": "Evidence collection failed for R3 (ROUTER_UNAVAILABLE). Component state is UNKNOWN, not necessarily DOWN.",
+          "is_direct_observation": false,
+          "measurement_value": null,
+          "observed_at": "2026-10-19T19:03:07.641848Z",
+          "supporting_evidence_ids": [
+            "ev-interface-r3-1792436587781-70d330-eth2"
+          ],
+          "symptom_id": "sym-0003",
+          "threshold_used": null
+        },
+        {
+          "affected_component": "R3",
+          "category": "COLLECTION_FAILURE",
+          "description": "Evidence collection failed for R3 (ROUTER_UNAVAILABLE). Component state is UNKNOWN, not necessarily DOWN.",
+          "is_direct_observation": false,
+          "measurement_value": null,
+          "observed_at": "2026-10-19T19:03:07.897246Z",
+          "supporting_evidence_ids": [
+            "ev-ospf-r3-1792436588128-4fd10c-2-2-2-2"
+          ],
+          "symptom_id": "sym-0004",
+          "threshold_used": null
+        },
+        {
+          "affected_component": "R3",
+          "category": "COLLECTION_FAILURE",
+          "description": "Evidence collection failed for R3 (ROUTER_UNAVAILABLE). Component state is UNKNOWN, not necessarily DOWN.",
+          "is_direct_observation": false,
+          "measurement_value": null,
+          "observed_at": "2026-10-19T19:03:07.897246Z",
+          "supporting_evidence_ids": [
+            "ev-ospf-r3-1792436588128-db12dc-4-4-4-4"
+          ],
+          "symptom_id": "sym-0005",
+          "threshold_used": null
+        },
+        {
+          "affected_component": "R3",
+          "category": "COLLECTION_FAILURE",
+          "description": "Evidence collection failed for R3 (ROUTER_UNAVAILABLE). Component state is UNKNOWN, not necessarily DOWN.",
+          "is_direct_observation": false,
+          "measurement_value": null,
+          "observed_at": "2026-10-19T19:03:08.369600Z",
+          "supporting_evidence_ids": [
+            "ev-routing-r3-1792436588601-041cf4-192-168-255-1-32"
+          ],
+          "symptom_id": "sym-0006",
+          "threshold_used": null
+        },
+        {
+          "affected_component": "R3",
+          "category": "COLLECTION_FAILURE",
+          "description": "Evidence collection failed for R3 (PROBE_SOURCE_UNAVAILABLE). Component state is UNKNOWN, not necessarily DOWN.",
+          "is_direct_observation": false,
+          "measurement_value": null,
+          "observed_at": "2026-10-19T19:03:17.972804Z",
+          "supporting_evidence_ids": [
+            "ev-ping-r3-1792436597972-6d6fa0-to-192-168-255-4"
+          ],
+          "symptom_id": "sym-0007",
+          "threshold_used": null
+        },
+        {
+          "affected_component": "R3",
+          "category": "COLLECTION_FAILURE",
+          "description": "Evidence collection failed for R3 (PROBE_SOURCE_UNAVAILABLE). Component state is UNKNOWN, not necessarily DOWN.",
+          "is_direct_observation": false,
+          "measurement_value": null,
+          "observed_at": "2026-10-19T19:03:32.474015Z",
+          "supporting_evidence_ids": [
+            "ev-traceroute-r3-1792436612474-14fb4e-trace-to-192-168-255-3"
+          ],
+          "symptom_id": "sym-0008",
+          "threshold_used": null
+        }
+      ]
+    }
+  ],
+  "produced_at": "2026-10-20T07:13:02.615710Z",
+  "result_id": "cr-20261020T071302Z-583576",
+  "snapshot_id": "obs-snap-20261019T190307Z-2b4c8c",
+  "total_evidence_records": 100
+}

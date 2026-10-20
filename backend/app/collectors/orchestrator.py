@@ -16,6 +16,7 @@ import uuid
 from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -52,8 +53,13 @@ class EvidenceSnapshot(BaseModel):
     collection_window_end: datetime = Field(description="UTC timestamp when collection ended.")
     router_ids: list[str] = Field(description="Routers targeted in this collection session.")
     topology: Topology = Field(description="Observed live network topology model.")
-    evidence_records: list[EvidenceRecord] = Field(
-        description="All normalized evidence observations."
+    evidence_records: list[dict[str, Any]] = Field(
+        description=(
+            "All normalized evidence observations serialized as raw dicts. "
+            "Preserves all subclass-specific fields (e.g. neighbour_router_id, "
+            "observed_status). Use EvidenceNormalizer.deserialize_record() to "
+            "reconstruct typed EvidenceRecord subclasses."
+        )
     )
     collector_errors: list[str] = Field(
         default_factory=list,
@@ -173,16 +179,17 @@ class CollectionOrchestrator:
         end_time = datetime.now(UTC)
 
         # 8. Normalization and ground-truth isolation audit
-        normalized_records: list[EvidenceRecord] = []
+        normalized_records: list[dict[str, Any]] = []
         for rec in collected_records:
             try:
                 norm_rec = EvidenceNormalizer.normalize_record(rec)
-                normalized_records.append(norm_rec)
+                # Serialize to dict preserving ALL subclass fields
+                normalized_records.append(norm_rec.model_dump(mode="json"))
             except Exception as exc:
                 errors.append(f"Normalization error for {rec.evidence_id}: {exc}")
 
-        # Compute summary counts
-        type_counts = Counter(r.source_type.value for r in normalized_records)
+        # Compute summary counts from dict records
+        type_counts = Counter(r.get("source_type", "UNKNOWN") for r in normalized_records)
 
         snapshot = EvidenceSnapshot(
             snapshot_id=snapshot_id,

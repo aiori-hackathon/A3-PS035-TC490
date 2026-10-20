@@ -87,21 +87,45 @@ class EvidenceNormalizer:
 
     @classmethod
     def deserialize_record(cls, data: dict[str, Any]) -> EvidenceRecord:
-        """Deserialize a dict into the appropriate typed EvidenceRecord subclass."""
+        """Deserialize a dict into the appropriate typed EvidenceRecord subclass.
+
+        Attempts typed subclass validation first. If validation fails because
+        required subclass fields are absent (e.g. snapshot was saved before the
+        Phase 04 serialization fix that changed evidence_records to list[dict]),
+        falls back to the base EvidenceRecord which only requires common fields.
+
+        This graceful fallback means existing Phase 04 snapshots remain usable
+        for correlation, though type-specific classification (e.g. packet loss)
+        will not be available for those records.
+        """
         source_type = data.get("source_type")
 
-        if source_type == EvidenceSourceType.INTERFACE_POLL.value:
-            return InterfaceObservation.model_validate(data)
-        elif source_type == EvidenceSourceType.OSPF_API.value:
-            return OSPFObservation.model_validate(data)
-        elif source_type == EvidenceSourceType.ROUTING_TABLE.value:
-            return RouteObservation.model_validate(data)
-        elif source_type == EvidenceSourceType.ACTIVE_PING.value:
-            return PingMeasurement.model_validate(data)
-        elif source_type == EvidenceSourceType.ACTIVE_TRACEROUTE.value:
-            return TracerouteObservation.model_validate(data)
-        elif source_type == EvidenceSourceType.SYSLOG.value:
-            return SyslogEvent.model_validate(data)
-        else:
-            # Fallback to base EvidenceRecord
-            return EvidenceRecord.model_validate(data)
+        subclass_map: dict[str, type[EvidenceRecord]] = {
+            EvidenceSourceType.INTERFACE_POLL.value: InterfaceObservation,
+            EvidenceSourceType.OSPF_API.value: OSPFObservation,
+            EvidenceSourceType.ROUTING_TABLE.value: RouteObservation,
+            EvidenceSourceType.ACTIVE_PING.value: PingMeasurement,
+            EvidenceSourceType.ACTIVE_TRACEROUTE.value: TracerouteObservation,
+            EvidenceSourceType.SYSLOG.value: SyslogEvent,
+        }
+
+        subclass = subclass_map.get(source_type)  # type: ignore[arg-type]
+        if subclass is not None:
+            try:
+                return subclass.model_validate(data)
+            except Exception:
+                # Typed subclass fields missing (legacy/lossy snapshot) —
+                # fall back to base EvidenceRecord to preserve the record.
+                pass
+
+        # Fallback: base EvidenceRecord.
+        # Because EvidenceRecord has extra="forbid", we must strip any subclass-
+        # specific fields before validation. Keep only the base model's known fields.
+        base_fields = set(EvidenceRecord.model_fields.keys())
+        base_data = {k: v for k, v in data.items() if k in base_fields}
+        # If source_type is not a recognized enum value, drop it (avoid enum error)
+        valid_source_types = {e.value for e in EvidenceSourceType}
+        if base_data.get("source_type") not in valid_source_types:
+            base_data.pop("source_type", None)
+        return EvidenceRecord.model_validate(base_data)
+
