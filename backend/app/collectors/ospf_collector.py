@@ -55,9 +55,8 @@ class OSPFCollector(BaseCollector):
     ) -> list[EvidenceRecord]:
         target_routers = self.filter_router_ids(router_ids)
         records: list[EvidenceRecord] = []
-        now = self.now_utc()
-
         for rid in target_routers:
+            now = self.now_utc()
             expected_nbrs = EXPECTED_OSPF_NEIGHBOURS.get(rid, [])
 
             if not self.transport.is_router_running(rid):
@@ -71,7 +70,7 @@ class OSPFCollector(BaseCollector):
                             source_interface=exp["interface"],
                             event_type="ROUTER_UNAVAILABLE",
                             observed_at=now,
-                            collected_at=now,
+                            collected_at=self.now_utc(),
                             source_type=EvidenceSourceType.OSPF_API,
                             collection_method=CollectionMethod.PERIODIC_POLL,
                             collection_status=ObservationStatus.COLLECTION_FAILED,
@@ -100,7 +99,7 @@ class OSPFCollector(BaseCollector):
                             source_interface=exp["interface"],
                             event_type="COMMAND_FAILED",
                             observed_at=now,
-                            collected_at=now,
+                            collected_at=self.now_utc(),
                             source_type=EvidenceSourceType.OSPF_API,
                             collection_method=CollectionMethod.PERIODIC_POLL,
                             collection_status=ObservationStatus.COLLECTION_FAILED,
@@ -126,7 +125,7 @@ class OSPFCollector(BaseCollector):
                             source_interface=exp["interface"],
                             event_type="PARSE_FAILED",
                             observed_at=now,
-                            collected_at=now,
+                            collected_at=self.now_utc(),
                             source_type=EvidenceSourceType.OSPF_API,
                             collection_method=CollectionMethod.PERIODIC_POLL,
                             collection_status=ObservationStatus.UNKNOWN,
@@ -139,6 +138,18 @@ class OSPFCollector(BaseCollector):
                     )
                 continue
 
+            config_code, config_stdout, _ = self.transport.execute(
+                rid,
+                ["vtysh", "-c", "show ip ospf interface json"],
+            )
+            config_time = self.now_utc()
+            try:
+                config = json.loads(config_stdout) if config_code == 0 else {}
+                config = config.get("interfaces", config)
+                if not isinstance(config, dict):
+                    config = {}
+            except (ValueError, AttributeError):
+                config = {}
             neighbors_dict = data.get("neighbors", {})
             observed_nbr_ids: set[str] = set()
 
@@ -169,7 +180,7 @@ class OSPFCollector(BaseCollector):
                             source_interface=local_iface or None,
                             event_type=event_type,
                             observed_at=now,
-                            collected_at=now,
+                            collected_at=self.now_utc(),
                             source_type=EvidenceSourceType.OSPF_API,
                             collection_method=CollectionMethod.PERIODIC_POLL,
                             collection_status=ObservationStatus.OBSERVED,
@@ -177,6 +188,10 @@ class OSPFCollector(BaseCollector):
                             neighbour_address=address or "0.0.0.0",
                             adjacency_state=state_clean,
                             dead_timer_remaining_s=dead_s,
+                            observed_interface_config=config.get(local_iface),
+                            interface_config_observed_at=(
+                                config_time if local_iface in config else None
+                            ),
                             raw_reference="vtysh:show ip ospf neighbor json",
                         )
                     )
@@ -193,7 +208,7 @@ class OSPFCollector(BaseCollector):
                             source_interface=exp["interface"],
                             event_type="OSPF_NEIGHBOUR_DOWN",
                             observed_at=now,
-                            collected_at=now,
+                            collected_at=self.now_utc(),
                             source_type=EvidenceSourceType.OSPF_API,
                             collection_method=CollectionMethod.PERIODIC_POLL,
                             collection_status=ObservationStatus.OBSERVED,
@@ -201,6 +216,10 @@ class OSPFCollector(BaseCollector):
                             neighbour_address=exp["nbr_address"],
                             adjacency_state="Down",
                             dead_timer_remaining_s=0.0,
+                            observed_interface_config=config.get(exp["interface"]),
+                            interface_config_observed_at=(
+                                config_time if exp["interface"] in config else None
+                            ),
                             raw_reference=f"neighbor {exp['nbr_router_id']} absent from table",
                         )
                     )

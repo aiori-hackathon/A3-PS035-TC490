@@ -70,6 +70,8 @@ class DockerTransport(CollectorTransport):
         ("ip", "-j", "addr", "show"),
         ("ping", "-c"),
         ("traceroute", "-n"),
+        ("tc", "-j", "qdisc", "show", "dev", "eth1"),
+        ("tc", "-j", "qdisc", "show", "dev", "eth2"),
     )
 
     FORBIDDEN_PATTERNS: ClassVar[tuple[str, ...]] = (
@@ -115,6 +117,13 @@ class DockerTransport(CollectorTransport):
                 raise SecurityViolationError(
                     f"Command contains forbidden pattern or target {forbidden!r}: {cmd_str!r}"
                 )
+
+        if command[0] == "tc" and (
+            len(command) != 6 or tuple(command) not in self.ALLOWED_COMMAND_PREFIXES
+        ):
+            raise SecurityViolationError(
+                "Only exact read-only data-interface qdisc queries allowed"
+            )
 
         # Match against allowed prefixes
         matched = False

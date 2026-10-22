@@ -1,0 +1,1302 @@
+{
+  "abstention_policy": "No accepted DIAGNOSED top1 or distinct accepted roots within 0.10 score; AMBIGUOUS may retain Top3 credit for eligible cases",
+  "baseline": {
+    "accepted_false_positive": false,
+    "category": "HEALTHY_BASELINE",
+    "diagnosis_count": 1,
+    "false_positive": false,
+    "provenance": "Separately declared control; not a fault-active accuracy case",
+    "top3": []
+  },
+  "cases": [
+    {
+      "abstained": false,
+      "ambiguous": false,
+      "case_id": "f1live001",
+      "declared_truth_run_id": "exp-aab6c8bcaad34acfaa7583d3ea391948",
+      "diagnosis_count": 1,
+      "diagnosis_status_counts": {
+        "DIAGNOSED": 1
+      },
+      "diagnosis_summaries": [
+        {
+          "collection_coverage_pct": 100.0,
+          "missing_information": [],
+          "reasoning_summary": "DIAGNOSED. Leading candidate LINK_FAILURE at L12, heuristic score 0.75. +0.70: Direct physical interface down family; repeated polls add no weight. Evidence: [ev-interface-r1-1792582675753-3ac931-eth1]. +0.15: Adjacency-loss family; dependent on physical state when present. Evidence: [ev-ospf-r1-1792582676207-4e1b54-2-2-2-2]. -0.10: FULL adjacency conflicts with persistent link loss; dead-timer lag possible. Evidence: [ev-ospf-r2-1792582676407-f541c7-1-1-1-1]. Scores are heuristic alignment values, not calibrated probabilities.",
+          "result_id": "dr-c92dc99b79b445c8957f1cd88ff2e0a6",
+          "status": "DIAGNOSED",
+          "total_evidence_count": 103
+        }
+      ],
+      "evaluation_status": "EVALUABLE",
+      "evidence_sufficiency_met": true,
+      "expected_component_id": "L12",
+      "expected_fault_type": "LINK_FAILURE",
+      "limitations": [],
+      "snapshot_path": "evaluation/datasets/observations/live/f1_link_failure_snapshot.json",
+      "snapshot_top1_ambiguous": false,
+      "synthetic": false,
+      "timing": {
+        "actual_capture_timing": "FAULT_ACTIVE",
+        "association_valid": true,
+        "captured_at": "2026-10-21T11:39:18.153395+00:00",
+        "collection_counts": {
+          "FAULT_ACTIVE": 103
+        },
+        "collection_range": {
+          "end": "2026-10-21T11:39:18.152217+00:00",
+          "start": "2026-10-21T11:37:55.753828+00:00"
+        },
+        "collection_window_end": "2026-10-21T11:39:18.153395+00:00",
+        "collection_window_start": "2026-10-21T11:37:53.361745+00:00",
+        "declared_capture_timing": "FAULT_ACTIVE",
+        "declared_window_timing": "FAULT_ACTIVE",
+        "evaluable": true,
+        "injection_timestamp": "2026-10-21T11:37:53.359838+00:00",
+        "interval_valid": true,
+        "missing_referenced_evidence_ids": [],
+        "observation_counts": {
+          "FAULT_ACTIVE": 103
+        },
+        "observation_range": {
+          "end": "2026-10-21T11:38:57.998714+00:00",
+          "start": "2026-10-21T11:37:55.682678+00:00"
+        },
+        "reasons": [],
+        "records": [
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:55.753828+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-interface-r1-1792582675753-4cf4f9-lo",
+            "observed_at": "2026-10-21T11:37:55.682678+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:55.753976+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-interface-r1-1792582675753-3ac931-eth1",
+            "observed_at": "2026-10-21T11:37:55.682678+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": [
+              "SUPPORT"
+            ]
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:55.753995+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-interface-r1-1792582675753-d444bd-eth2",
+            "observed_at": "2026-10-21T11:37:55.682678+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:55.819223+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-interface-r2-1792582675819-527775-lo",
+            "observed_at": "2026-10-21T11:37:55.754008+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:55.819300+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-interface-r2-1792582675819-0dd85a-eth1",
+            "observed_at": "2026-10-21T11:37:55.754008+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:55.819311+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-interface-r2-1792582675819-50d0bd-eth2",
+            "observed_at": "2026-10-21T11:37:55.754008+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:55.888133+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-interface-r3-1792582675888-46a6f2-lo",
+            "observed_at": "2026-10-21T11:37:55.819315+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:55.888249+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-interface-r3-1792582675888-d8abee-eth1",
+            "observed_at": "2026-10-21T11:37:55.819315+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:55.888281+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-interface-r3-1792582675888-755146-eth2",
+            "observed_at": "2026-10-21T11:37:55.819315+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:55.950217+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-interface-r4-1792582675950-d8bd5a-lo",
+            "observed_at": "2026-10-21T11:37:55.888290+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:55.950286+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-interface-r4-1792582675950-e521b3-eth1",
+            "observed_at": "2026-10-21T11:37:55.888290+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:55.950296+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-interface-r4-1792582675950-399040-eth2",
+            "observed_at": "2026-10-21T11:37:55.888290+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:56.011382+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-interface-r5-1792582676011-958785-lo",
+            "observed_at": "2026-10-21T11:37:55.950301+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:56.011460+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-interface-r5-1792582676011-2d4e4f-eth1",
+            "observed_at": "2026-10-21T11:37:55.950301+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:56.011470+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-interface-r5-1792582676011-b67e79-eth2",
+            "observed_at": "2026-10-21T11:37:55.950301+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:56.207868+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-ospf-r1-1792582676207-d020d4-5-5-5-5",
+            "observed_at": "2026-10-21T11:37:56.011522+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:56.207917+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-ospf-r1-1792582676207-4e1b54-2-2-2-2",
+            "observed_at": "2026-10-21T11:37:56.011522+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": [
+              "SUPPORT"
+            ]
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:56.407219+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-ospf-r2-1792582676407-f541c7-1-1-1-1",
+            "observed_at": "2026-10-21T11:37:56.207926+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": [
+              "CONTRADICTION"
+            ]
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:56.407268+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-ospf-r2-1792582676407-354583-3-3-3-3",
+            "observed_at": "2026-10-21T11:37:56.207926+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:56.599872+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-ospf-r3-1792582676599-b4020f-2-2-2-2",
+            "observed_at": "2026-10-21T11:37:56.407279+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:56.599930+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-ospf-r3-1792582676599-b06d65-4-4-4-4",
+            "observed_at": "2026-10-21T11:37:56.407279+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:56.792077+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-ospf-r4-1792582676792-57e808-3-3-3-3",
+            "observed_at": "2026-10-21T11:37:56.599945+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:56.792142+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-ospf-r4-1792582676792-cebf0a-5-5-5-5",
+            "observed_at": "2026-10-21T11:37:56.599945+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:56.985017+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-ospf-r5-1792582676984-d09a80-4-4-4-4",
+            "observed_at": "2026-10-21T11:37:56.792159+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:56.985111+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-ospf-r5-1792582676985-fa0234-1-1-1-1",
+            "observed_at": "2026-10-21T11:37:56.792159+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.095192+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r1-1792582677095-381e55-10-0-12-0-30",
+            "observed_at": "2026-10-21T11:37:56.985174+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.095272+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r1-1792582677095-7a7992-10-0-15-0-30",
+            "observed_at": "2026-10-21T11:37:56.985174+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.095283+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r1-1792582677095-99270b-10-0-15-0-30",
+            "observed_at": "2026-10-21T11:37:56.985174+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.095290+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r1-1792582677095-100a7b-10-0-23-0-30",
+            "observed_at": "2026-10-21T11:37:56.985174+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.095297+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r1-1792582677095-dbe0bc-10-0-34-0-30",
+            "observed_at": "2026-10-21T11:37:56.985174+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.095303+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r1-1792582677095-e945d8-10-0-45-0-30",
+            "observed_at": "2026-10-21T11:37:56.985174+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.095309+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r1-1792582677095-bcff4d-172-31-51-0-29",
+            "observed_at": "2026-10-21T11:37:56.985174+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.095316+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r1-1792582677095-70d094-192-168-255-1-32",
+            "observed_at": "2026-10-21T11:37:56.985174+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.095322+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r1-1792582677095-9fb535-192-168-255-1-32",
+            "observed_at": "2026-10-21T11:37:56.985174+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.095328+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r1-1792582677095-e9bd5c-192-168-255-2-32",
+            "observed_at": "2026-10-21T11:37:56.985174+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.095334+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r1-1792582677095-a4fa5b-192-168-255-3-32",
+            "observed_at": "2026-10-21T11:37:56.985174+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.095339+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r1-1792582677095-2a91ca-192-168-255-4-32",
+            "observed_at": "2026-10-21T11:37:56.985174+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.095346+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r1-1792582677095-0556cc-192-168-255-5-32",
+            "observed_at": "2026-10-21T11:37:56.985174+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.202754+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r2-1792582677202-9c3e74-10-0-12-0-30",
+            "observed_at": "2026-10-21T11:37:57.095351+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.202822+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r2-1792582677202-2589dd-10-0-12-0-30",
+            "observed_at": "2026-10-21T11:37:57.095351+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.202836+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r2-1792582677202-174613-10-0-15-0-30",
+            "observed_at": "2026-10-21T11:37:57.095351+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.202844+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r2-1792582677202-12c484-10-0-23-0-30",
+            "observed_at": "2026-10-21T11:37:57.095351+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.202853+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r2-1792582677202-c7b9aa-10-0-23-0-30",
+            "observed_at": "2026-10-21T11:37:57.095351+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.202859+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r2-1792582677202-b9e0e3-10-0-34-0-30",
+            "observed_at": "2026-10-21T11:37:57.095351+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.202866+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r2-1792582677202-c179a8-10-0-45-0-30",
+            "observed_at": "2026-10-21T11:37:57.095351+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.202872+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r2-1792582677202-9ef012-172-31-12-0-29",
+            "observed_at": "2026-10-21T11:37:57.095351+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.202878+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r2-1792582677202-4c33c8-172-31-23-0-29",
+            "observed_at": "2026-10-21T11:37:57.095351+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.202885+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r2-1792582677202-7427a5-192-168-255-1-32",
+            "observed_at": "2026-10-21T11:37:57.095351+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.202892+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r2-1792582677202-84993f-192-168-255-2-32",
+            "observed_at": "2026-10-21T11:37:57.095351+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.202899+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r2-1792582677202-cf95e9-192-168-255-2-32",
+            "observed_at": "2026-10-21T11:37:57.095351+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.202907+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r2-1792582677202-5e73a8-192-168-255-3-32",
+            "observed_at": "2026-10-21T11:37:57.095351+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.202916+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r2-1792582677202-f7bf2b-192-168-255-4-32",
+            "observed_at": "2026-10-21T11:37:57.095351+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.202925+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r2-1792582677202-8f80f9-192-168-255-5-32",
+            "observed_at": "2026-10-21T11:37:57.095351+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.309981+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r3-1792582677309-80a715-0-0-0-0-0",
+            "observed_at": "2026-10-21T11:37:57.202932+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.310048+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r3-1792582677310-df2cdf-10-0-12-0-30",
+            "observed_at": "2026-10-21T11:37:57.202932+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.310059+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r3-1792582677310-610a86-10-0-15-0-30",
+            "observed_at": "2026-10-21T11:37:57.202932+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.310066+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r3-1792582677310-a4cf85-10-0-23-0-30",
+            "observed_at": "2026-10-21T11:37:57.202932+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.310072+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r3-1792582677310-ee237f-10-0-23-0-30",
+            "observed_at": "2026-10-21T11:37:57.202932+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.310080+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r3-1792582677310-eed664-10-0-34-0-30",
+            "observed_at": "2026-10-21T11:37:57.202932+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.310086+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r3-1792582677310-3df03c-10-0-34-0-30",
+            "observed_at": "2026-10-21T11:37:57.202932+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.310092+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r3-1792582677310-69f744-10-0-45-0-30",
+            "observed_at": "2026-10-21T11:37:57.202932+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.310098+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r3-1792582677310-45c5f1-172-31-23-0-29",
+            "observed_at": "2026-10-21T11:37:57.202932+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.310104+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r3-1792582677310-e72689-172-31-34-0-29",
+            "observed_at": "2026-10-21T11:37:57.202932+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.310110+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r3-1792582677310-7bed72-192-168-255-1-32",
+            "observed_at": "2026-10-21T11:37:57.202932+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.310116+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r3-1792582677310-a3a19b-192-168-255-2-32",
+            "observed_at": "2026-10-21T11:37:57.202932+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.310122+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r3-1792582677310-aa722c-192-168-255-3-32",
+            "observed_at": "2026-10-21T11:37:57.202932+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.310143+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r3-1792582677310-e53dc1-192-168-255-3-32",
+            "observed_at": "2026-10-21T11:37:57.202932+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.310149+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r3-1792582677310-e7ef0b-192-168-255-4-32",
+            "observed_at": "2026-10-21T11:37:57.202932+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.310154+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r3-1792582677310-8a09fe-192-168-255-5-32",
+            "observed_at": "2026-10-21T11:37:57.202932+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.416896+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r4-1792582677416-d564df-10-0-12-0-30",
+            "observed_at": "2026-10-21T11:37:57.310161+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.416967+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r4-1792582677416-657331-10-0-15-0-30",
+            "observed_at": "2026-10-21T11:37:57.310161+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.416977+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r4-1792582677416-aac9b0-10-0-23-0-30",
+            "observed_at": "2026-10-21T11:37:57.310161+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.416983+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r4-1792582677416-2bad51-10-0-34-0-30",
+            "observed_at": "2026-10-21T11:37:57.310161+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.416991+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r4-1792582677416-2e4e83-10-0-34-0-30",
+            "observed_at": "2026-10-21T11:37:57.310161+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.416997+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r4-1792582677416-8ee4b7-10-0-45-0-30",
+            "observed_at": "2026-10-21T11:37:57.310161+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.417003+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r4-1792582677416-3d0787-10-0-45-0-30",
+            "observed_at": "2026-10-21T11:37:57.310161+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.417009+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r4-1792582677417-a018b0-172-31-34-0-29",
+            "observed_at": "2026-10-21T11:37:57.310161+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.417015+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r4-1792582677417-75b0a9-172-31-45-0-29",
+            "observed_at": "2026-10-21T11:37:57.310161+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.417022+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r4-1792582677417-f0b455-192-168-255-1-32",
+            "observed_at": "2026-10-21T11:37:57.310161+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.417028+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r4-1792582677417-ade8cd-192-168-255-2-32",
+            "observed_at": "2026-10-21T11:37:57.310161+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.417035+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r4-1792582677417-42acf9-192-168-255-3-32",
+            "observed_at": "2026-10-21T11:37:57.310161+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.417043+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r4-1792582677417-3d6181-192-168-255-4-32",
+            "observed_at": "2026-10-21T11:37:57.310161+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.417050+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r4-1792582677417-fc4395-192-168-255-4-32",
+            "observed_at": "2026-10-21T11:37:57.310161+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.417059+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r4-1792582677417-aa0065-192-168-255-5-32",
+            "observed_at": "2026-10-21T11:37:57.310161+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.525124+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r5-1792582677525-bc4dff-10-0-12-0-30",
+            "observed_at": "2026-10-21T11:37:57.417066+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.525194+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r5-1792582677525-a18e50-10-0-15-0-30",
+            "observed_at": "2026-10-21T11:37:57.417066+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.525205+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r5-1792582677525-d680d2-10-0-15-0-30",
+            "observed_at": "2026-10-21T11:37:57.417066+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.525211+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r5-1792582677525-e0f3ec-10-0-23-0-30",
+            "observed_at": "2026-10-21T11:37:57.417066+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.525218+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r5-1792582677525-fa1984-10-0-34-0-30",
+            "observed_at": "2026-10-21T11:37:57.417066+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.525224+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r5-1792582677525-2796dc-10-0-45-0-30",
+            "observed_at": "2026-10-21T11:37:57.417066+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.525234+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r5-1792582677525-ce776a-10-0-45-0-30",
+            "observed_at": "2026-10-21T11:37:57.417066+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.525240+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r5-1792582677525-524560-172-31-45-0-29",
+            "observed_at": "2026-10-21T11:37:57.417066+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.525246+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r5-1792582677525-c78f48-172-31-51-0-29",
+            "observed_at": "2026-10-21T11:37:57.417066+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.525252+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r5-1792582677525-3ef63b-192-168-255-1-32",
+            "observed_at": "2026-10-21T11:37:57.417066+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.525258+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r5-1792582677525-55366a-192-168-255-2-32",
+            "observed_at": "2026-10-21T11:37:57.417066+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.525263+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r5-1792582677525-6fec4c-192-168-255-3-32",
+            "observed_at": "2026-10-21T11:37:57.417066+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.525269+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r5-1792582677525-4f8011-192-168-255-4-32",
+            "observed_at": "2026-10-21T11:37:57.417066+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.525275+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r5-1792582677525-9e893b-192-168-255-5-32",
+            "observed_at": "2026-10-21T11:37:57.417066+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:37:57.525280+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-routing-r5-1792582677525-ae8f2f-192-168-255-5-32",
+            "observed_at": "2026-10-21T11:37:57.417066+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:38:17.695585+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-ping-r1-1792582677528-4b22c9-to-10-0-12-2",
+            "observed_at": "2026-10-21T11:37:57.528377+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:38:37.853490+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-ping-r2-1792582697696-551e82-to-10-0-12-1",
+            "observed_at": "2026-10-21T11:38:17.696066+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:38:57.998463+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-ping-r1-1792582717854-484d8d-to-10-0-12-2",
+            "observed_at": "2026-10-21T11:38:37.854203+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          },
+          {
+            "actual_collected_timing": "FAULT_ACTIVE",
+            "actual_observed_timing": "FAULT_ACTIVE",
+            "chronology_valid": true,
+            "collected_at": "2026-10-21T11:39:18.152217+00:00",
+            "collected_timing": "FAULT_ACTIVE",
+            "evidence_id": "ev-ping-r2-1792582737998-b5606a-to-10-0-12-1",
+            "observed_at": "2026-10-21T11:38:57.998714+00:00",
+            "observed_timing": "FAULT_ACTIVE",
+            "roles": []
+          }
+        ],
+        "recovery_timestamp": "2026-10-21T11:39:24.498574+00:00",
+        "reset_started_at": "2026-10-21T11:39:18.168540+00:00",
+        "used_evidence_ids": [
+          "ev-interface-r1-1792582675753-3ac931-eth1",
+          "ev-ospf-r1-1792582676207-4e1b54-2-2-2-2",
+          "ev-ospf-r2-1792582676407-f541c7-1-1-1-1"
+        ],
+        "window_valid": true
+      },
+      "top1": {
+        "component_id": "L12",
+        "fault_type": "LINK_FAILURE",
+        "hypothesis_id": "h-link_failure-l12",
+        "incident_id": "incident-8fe433c66ab293e2",
+        "rule_score": 0.75
+      },
+      "top1_correct": true,
+      "top1_fault_type_correct": true,
+      "top1_location_correct": true,
+      "top3": [
+        {
+          "component_id": "L12",
+          "fault_type": "LINK_FAILURE",
+          "hypothesis_id": "h-link_failure-l12",
+          "incident_id": "incident-8fe433c66ab293e2",
+          "rule_score": 0.75
+        }
+      ],
+      "top3_correct": true,
+      "top3_fault_type_correct": true,
+      "top3_location_correct": true,
+      "truth_path": "evaluation/datasets/sidecars/f1-exp-aab6c8bcaad34acfaa7583d3ea391948/truth.json"
+    }
+  ],
+  "coverage": {
+    "all_cases": {
+      "abstention_count": 0,
+      "abstention_rate": 0.0,
+      "accepted_top1_count": 1,
+      "accepted_top1_rate": 1.0,
+      "ambiguous_case_count": 0,
+      "case_count": 1,
+      "sufficient_case_count": 1
+    },
+    "valid_cases": {
+      "abstention_count": 0,
+      "abstention_rate": 0.0,
+      "accepted_top1_count": 1,
+      "accepted_top1_rate": 1.0,
+      "ambiguous_case_count": 0,
+      "case_count": 1,
+      "sufficient_case_count": 1
+    }
+  },
+  "engine_versions": [
+    "phase06-rules-v1.1"
+  ],
+  "generated_at": "2026-10-22T19:41:25.227042+00:00",
+  "ground_truth_loaded_after_all_inference": true,
+  "limitations": [
+    "Supervised single-trial live F1 validation on link L12. Not a claim of 100% multi-fault accuracy.",
+    "Contemporaneous capture binding binds snapshot obs-snap-20261021T113754Z-520097 to controller run exp-aab6c8bcaad34acfaa7583d3ea391948.",
+    "Reset began after observation window completed; recovery was confirmed healthy."
+  ],
+  "phase": "06.1",
+  "ranking_policy": "unique type/location; score descending; type/location ascending",
+  "schema_version": "2.0",
+  "timestamp_validity": {
+    "actual_capture_timing_counts": {
+      "FAULT_ACTIVE": 1
+    },
+    "association_valid_case_count": 1,
+    "declared_window_timing_counts": {
+      "FAULT_ACTIVE": 1
+    },
+    "evaluable_case_count": 1,
+    "fault_case_count": 1,
+    "not_evaluable_case_count": 0,
+    "synthetic_validation_case_count": 0
+  },
+  "valid_fault_metrics": {
+    "case_count": 1,
+    "top1_accuracy": 1.0,
+    "top1_correct": 1,
+    "top1_fault_type_accuracy": 1.0,
+    "top1_fault_type_correct": 1,
+    "top1_location_accuracy": 1.0,
+    "top1_location_correct": 1,
+    "top3_accuracy": 1.0,
+    "top3_correct": 1,
+    "top3_fault_type_accuracy": 1.0,
+    "top3_fault_type_correct": 1,
+    "top3_location_accuracy": 1.0,
+    "top3_location_correct": 1
+  }
+}

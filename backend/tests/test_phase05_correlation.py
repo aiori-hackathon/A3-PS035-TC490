@@ -877,13 +877,14 @@ class TestExtraFieldRejection:
 
 class TestCorrelationEngineHealthy:
 
-    def test_healthy_baseline_single_group(self):
+    def test_untyped_baseline_is_incomplete(self):
         engine = CorrelationEngine()
         records = [_make_base_record(f"R{i+1}") for i in range(5)]
         topo = build_expected_topology_graph().topology
         result = engine.correlate_records(records, topo)
         assert len(result.incidents) == 1
-        assert result.incidents[0].status == "HEALTHY"
+        # Bare base records have no state payload; lack of anomalies cannot prove health.
+        assert result.incidents[0].status == "INCOMPLETE"
 
     def test_healthy_result_has_zero_anomalous(self):
         engine = CorrelationEngine()
@@ -1186,21 +1187,18 @@ class TestSymptomIsolation:
 
 class TestContradictoryObservations:
 
-    def test_ospf_lost_without_iface_down_noted_as_contradictory(self):
+    def test_ospf_lost_without_interface_evidence_is_missing_information(self):
         """
-        OSPF adjacency lost with no corresponding interface-down observation
-        should be noted as potentially contradictory (could be config mismatch
-        rather than physical link failure).
+        Absence of an interface observation is missing information, not a conflict.
         """
         engine = CorrelationEngine()
         rec = _make_ospf_record("R1", "2.2.2.2", "down")
         topo = build_expected_topology_graph().topology
         result = engine.correlate_records([rec], topo)
+        assert result.incidents
         for inc in result.incidents:
-            if inc.contradictory_observations:
-                # Should mention that no interface-down was observed
-                combined = " ".join(inc.contradictory_observations).lower()
-                assert "interface" in combined or "configuration" in combined
+            assert inc.contradictory_observations == []
+            assert any("interface state" in item for item in inc.missing_information)
 
 
 # ===========================================================================
@@ -1302,7 +1300,7 @@ class TestAllSnapshotFiles:
         assert result.ground_truth_isolation_verified is True
         assert isinstance(result.incidents, list)
 
-    def test_baseline_snapshot_is_healthy(self):
+    def test_legacy_baseline_snapshot_is_incomplete(self):
         snap_path = _DATASETS_DIR / "baseline_snapshot.json"
         if not snap_path.exists():
             pytest.skip("Baseline snapshot not found")
@@ -1310,14 +1308,14 @@ class TestAllSnapshotFiles:
             snap = json.load(f)
         engine = CorrelationEngine()
         result = engine.correlate_snapshot_dict(snap)
-        # Baseline must produce HEALTHY (no anomalies from base records)
+        # Legacy snapshots lost typed state fields. No anomalies cannot establish health.
         statuses = [inc.status for inc in result.incidents]
         assert result.anomalous_record_count == 0, (
             f"Baseline snapshot must have 0 anomalous records, "
             f"got {result.anomalous_record_count}"
         )
-        assert all(s == "HEALTHY" for s in statuses), (
-            f"Baseline snapshot must be HEALTHY, got statuses: {statuses}"
+        assert all(s == "INCOMPLETE" for s in statuses), (
+            f"Untyped baseline snapshot must be INCOMPLETE, got statuses: {statuses}"
         )
 
     def test_f2_router_failure_detects_anomalies(self):

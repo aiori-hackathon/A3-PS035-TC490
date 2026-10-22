@@ -1,0 +1,10 @@
+{
+  "actual_fault_location_id": "L12",
+  "experiment_seed": 0,
+  "injection_timestamp": "2026-10-21T11:37:53.359838Z",
+  "lab_operator_notes": "Capture workflow; stochastic netem seed not controlled (0 is unspecified).",
+  "recovery_timestamp": "2026-10-21T11:39:24.498574Z",
+  "run_id": "exp-aab6c8bcaad34acfaa7583d3ea391948",
+  "scenario_id": "F1_LINK_FAILURE",
+  "seeded_fault_type": "LINK_FAILURE"
+}

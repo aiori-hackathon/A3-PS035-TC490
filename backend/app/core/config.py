@@ -34,6 +34,12 @@ class Settings(BaseSettings):
         description="Database connection string",
     )
 
+    # Phase 06: heuristic alignment thresholds, never probability cutoffs.
+    DIAGNOSIS_MIN_PRIMARY_POINTS: int = Field(default=2, ge=2)
+    DIAGNOSIS_MIN_COVERAGE_PCT: float = Field(default=60.0, ge=0.0, le=100.0)
+    DIAGNOSIS_MIN_SCORE: float = Field(default=0.65, gt=0.0, le=1.0)
+    DIAGNOSIS_MIN_MARGIN: float = Field(default=0.10, gt=0.0, le=1.0)
+
 
 @lru_cache
 def get_settings() -> Settings:

@@ -1,0 +1,23 @@
+{
+  "artifact_directory": "e9dc286d5dd94e1a852d0ad2d20b3c3d",
+  "baseline_verified_at": "2026-10-21T11:37:52.400633+00:00",
+  "collection_end": "2026-10-21T11:39:18.153395Z",
+  "collection_start": "2026-10-21T11:37:53.361745+00:00",
+  "errors": [],
+  "injection_command_end": "2026-10-21T11:37:53.359838+00:00",
+  "injection_command_start": "2026-10-21T11:37:53.279748+00:00",
+  "missing_measurements": [
+    "ev-ospf-r1-1792582676207-4e1b54-2-2-2-2: observed OSPF interface configuration unavailable"
+  ],
+  "recovery_confirmed": true,
+  "recovery_confirmed_at": "2026-10-21T11:39:24.498574+00:00",
+  "reset_ended_at": "2026-10-21T11:39:18.238717+00:00",
+  "reset_started_at": "2026-10-21T11:39:18.168540+00:00",
+  "run_id": "exp-aab6c8bcaad34acfaa7583d3ea391948",
+  "scenario_id": "F1_LINK_FAILURE",
+  "snapshot_id": "obs-snap-20261021T113754Z-520097",
+  "snapshot_sha256": "fcf27ee3289d349e0b74ec8d4fa2e790e2c265e4ae9eab0527ab1d87c58e2b82",
+  "status": "CAPTURED",
+  "synthetic": false,
+  "target": "L12"
+}

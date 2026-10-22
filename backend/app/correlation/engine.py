@@ -190,6 +190,11 @@ class CorrelationEngine:
         -------
         CorrelationResult
         """
+        self._verify_no_ground_truth_leakage({
+            "snapshot_id": snapshot_id,
+            "topology": topology.model_dump(mode="json"),
+            "evidence_records": [rec.model_dump(mode="json") for rec in records],
+        }, snapshot_id)
         result_id = f"cr-{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}-{uuid.uuid4().hex[:6]}"
         produced_at = datetime.now(UTC)
         notes: list[str] = []
@@ -263,6 +268,7 @@ class CorrelationEngine:
                 temporal_groups,
                 deduped_records,
                 produced_at,
+                {eid for sym in all_symptoms for eid in sym.supporting_evidence_ids},
             ))
         else:
             # Group symptoms into incidents using topology + temporal context
@@ -308,15 +314,15 @@ class CorrelationEngine:
         """Classify an evidence record into zero or more symptoms."""
         symptoms: list[CorrelatedSymptom] = []
 
-        if record.collection_status == ObservationStatus.COLLECTION_FAILED:
-            # Collection failure — note but do not infer DOWN
+        if record.collection_status != ObservationStatus.OBSERVED:
+            # Unavailable evidence is missing information, never observed component state.
             symptoms.append(CorrelatedSymptom(
                 symptom_id=next_sym_id(),
                 category=SymptomCategory.COLLECTION_FAILURE,
                 affected_component=record.source_router,
                 description=(
-                    f"Evidence collection failed for {record.source_router} "
-                    f"({record.event_type}). "
+                    f"Evidence unavailable for {record.source_router} "
+                    f"({record.event_type}, {record.collection_status.value}). "
                     f"Component state is UNKNOWN, not necessarily DOWN."
                 ),
                 supporting_evidence_ids=[record.evidence_id],
@@ -367,7 +373,7 @@ class CorrelationEngine:
             if iface_name != "unknown"
             else record.source_router
         )
-        status_lower = record.observed_status.lower()
+        status_lower = record.observed_status.lower().replace("_", "-")
 
         if status_lower in ("down", "admin-down"):
             symptoms.append(CorrelatedSymptom(
@@ -382,7 +388,7 @@ class CorrelationEngine:
                 is_direct_observation=True,
                 observed_at=record.observed_at,
             ))
-        else:
+        elif status_lower == "up":
             symptoms.append(CorrelatedSymptom(
                 symptom_id=next_sym_id(),
                 category=SymptomCategory.HEALTHY,
@@ -400,7 +406,7 @@ class CorrelationEngine:
         self, record: OSPFObservation, next_sym_id: Any
     ) -> list[CorrelatedSymptom]:
         symptoms: list[CorrelatedSymptom] = []
-        state_lower = (record.adjacency_state or "unknown").lower()
+        state_lower = (record.adjacency_state or "unknown").split("/", 1)[0].strip().lower()
         nbr_ospf_id = record.neighbour_router_id
         nbr_router = resolve_router_from_ospf_id(nbr_ospf_id) or nbr_ospf_id
         adj_component = f"adj:{record.source_router}→{nbr_router}"
@@ -438,7 +444,7 @@ class CorrelationEngine:
                 is_direct_observation=True,
                 observed_at=record.observed_at,
             ))
-        elif state_lower in ("unknown", "init", "attempt", "exstart", "exchange", "loading"):
+        elif state_lower in ("init", "attempt", "2way", "exstart", "exchange", "loading"):
             symptoms.append(CorrelatedSymptom(
                 symptom_id=next_sym_id(),
                 category=SymptomCategory.OSPF_ADJACENCY_DEGRADED,
@@ -515,7 +521,7 @@ class CorrelationEngine:
                 measurement_value=loss,
                 threshold_used=self.packet_loss_threshold,
             ))
-        elif avg_rtt is not None and avg_rtt > self.latency_threshold_ms:
+        elif avg_rtt is not None and avg_rtt >= self.latency_threshold_ms:
             symptoms.append(CorrelatedSymptom(
                 symptom_id=next_sym_id(),
                 category=SymptomCategory.LATENCY_ELEVATED,
@@ -576,7 +582,7 @@ class CorrelationEngine:
             symptoms.append(CorrelatedSymptom(
                 symptom_id=next_sym_id(),
                 category=SymptomCategory.ROUTER_UNREACHABLE,
-                affected_component=record.source_router,
+                affected_component=f"ping:{record.probe_source}→{record.target_address}",
                 description=(
                     f"Traceroute from {record.probe_source} to {record.target_address} "
                     f"did not reach destination ({record.total_hops} hops observed). "
@@ -717,9 +723,14 @@ class CorrelationEngine:
             cluster_routers: set[str] = set()
             for i in cluster_indices:
                 cluster_routers.update(routers_per_sym[i])
+            cluster_temporal_groups = {tg_by_evidence[eid] for eid in all_eids
+                                       if eid in tg_by_evidence}
             cluster_records = [
                 r for r in deduped_records
-                if r.evidence_id in all_eids or r.source_router in cluster_routers
+                if r.evidence_id in all_eids or (
+                    r.source_router in cluster_routers
+                    and tg_by_evidence.get(r.evidence_id) in cluster_temporal_groups
+                )
             ]
             result.append((cluster_symptoms, cluster_records))
 
@@ -785,37 +796,64 @@ class CorrelationEngine:
                 continue
             supporting_obs.append(f"{sym.category.value}: {sym.description}")
 
-        # Flag potential contradictions (e.g. interface UP but OSPF adjacency DOWN)
-        iface_down_routers = {
-            sym.affected_component.split(":")[1]
-            for sym in symptoms
-            if sym.category == SymptomCategory.INTERFACE_DOWN and ":" in sym.affected_component
-        }
-        ospf_lost_routers = {
-            sym.affected_component.split(":")[1].split("→")[0]
-            for sym in symptoms
-            if sym.category == SymptomCategory.OSPF_ADJACENCY_LOST
-            and "→" in sym.affected_component
-        }
-        # If we see OSPF_ADJACENCY_LOST but no INTERFACE_DOWN, note potential contradiction
-        ospf_only = ospf_lost_routers - iface_down_routers
-        if ospf_only:
-            for r in sorted(ospf_only):
+        # Contradictions require conflicting observations of the same fact. Interface
+        # UP and OSPF DOWN concern different protocol layers and are compatible.
+        states: dict[tuple[str, str, str], dict[str, list[str]]] = defaultdict(
+            lambda: defaultdict(list)
+        )
+        for rec in records:
+            if rec.collection_status != ObservationStatus.OBSERVED:
+                continue
+            if isinstance(rec, InterfaceObservation):
+                fact = ("interface", rec.source_router, rec.source_interface or "")
+                state = rec.observed_status.lower().replace("_", "-")
+                state = "down" if state == "admin-down" else state
+                if state not in {"up", "down"}:
+                    continue
+            elif isinstance(rec, OSPFObservation):
+                fact = ("OSPF adjacency", rec.source_router, rec.neighbour_router_id)
+                state = rec.adjacency_state.split("/", 1)[0].strip().lower()
+                if state not in {"full", "down"}:
+                    continue
+            else:
+                continue
+            states[fact][state].append(rec.evidence_id)
+        for fact, observed_states in sorted(states.items()):
+            if len(observed_states) > 1:
+                ids = sorted(eid for eids in observed_states.values() for eid in eids)
                 contradictory_obs.append(
-                    f"Router {r}: OSPF adjacency lost but no interface-down observation. "
-                    f"Could indicate OSPF configuration mismatch or timer issue rather "
-                    f"than physical link failure."
+                    f"Conflicting {fact[0]} states for {fact[1]}/{fact[2]} within this "
+                    f"observation window: {', '.join(sorted(observed_states))}. "
+                    f"Evidence: {', '.join(ids)}. May represent a state transition."
                 )
+
+        for rec in records:
+            if (isinstance(rec, OSPFObservation)
+                    and rec.collection_status == ObservationStatus.OBSERVED):
+                state = rec.adjacency_state.split("/", 1)[0].strip().lower()
+                if state == "down" and not any(
+                    isinstance(other, InterfaceObservation)
+                    and other.collection_status == ObservationStatus.OBSERVED
+                    and other.source_router == rec.source_router
+                    and other.source_interface == rec.source_interface
+                    and other.observed_status.lower() in {"up", "down", "admin-down", "admin_down"}
+                    for other in records
+                ):
+                    missing_info.append(
+                        f"No observed interface state for {rec.source_router}/"
+                        f"{rec.source_interface or 'unknown'} accompanying OSPF loss "
+                        f"evidence {rec.evidence_id}."
+                    )
 
         # Check for collection failures (missing info)
         collection_failures = [
             r for r in records
-            if r.collection_status == ObservationStatus.COLLECTION_FAILED
+            if r.collection_status != ObservationStatus.OBSERVED
         ]
         if collection_failures:
             failed_routers = sorted(set(r.source_router for r in collection_failures))
             missing_info.append(
-                f"Evidence collection failed for: {', '.join(failed_routers)}. "
+                f"Evidence unavailable for: {', '.join(failed_routers)}. "
                 f"Observations from these routers are incomplete."
             )
 
@@ -867,13 +905,17 @@ class CorrelationEngine:
         temporal_groups: list,
         records: list[EvidenceRecord],
         produced_at: datetime,
+        classified_evidence_ids: set[str],
     ) -> CorrelatedIncident:
         """Build a HEALTHY correlation result with no anomalies."""
-        window = self._temporal.compute_window(records, anchor_time=produced_at)
+        window = self._temporal.compute_window(records)
         routers = sorted(set(r.source_router for r in records))
+        unclassified = sorted(r.evidence_id for r in records
+                              if r.evidence_id not in classified_evidence_ids)
+        incomplete = bool(unclassified)
         return CorrelatedIncident(
             incident_id=incident_id,
-            status="HEALTHY",
+            status="INCOMPLETE" if incomplete else "HEALTHY",
             correlation_window_start=window.window_start,
             correlation_window_end=window.window_end,
             affected_routers=routers,
@@ -883,8 +925,13 @@ class CorrelationEngine:
             evidence_ids=sorted(r.evidence_id for r in records),
             supporting_observations=[],
             contradictory_observations=[],
-            missing_information=[],
+            missing_information=[
+                "No usable state classification for evidence: " + ", ".join(unclassified) + "."
+            ] if incomplete else [],
             correlation_explanation=(
+                "No abnormalities classified, but unavailable or untyped state evidence "
+                "prevents a healthy assessment."
+                if incomplete else
                 f"All {len(records)} evidence records from routers "
                 f"{', '.join(routers)} indicate healthy baseline conditions. "
                 f"No anomalies detected. No incident grouping required."
@@ -956,23 +1003,42 @@ class CorrelationEngine:
                                 ))
                                 break
 
-                # Interface → OSPF adjacency relationship
-                if (
-                    sym_a.category == SymptomCategory.INTERFACE_DOWN
-                    and sym_b.category in (
-                        SymptomCategory.OSPF_ADJACENCY_LOST,
-                        SymptomCategory.OSPF_ADJACENCY_DEGRADED,
-                    )
-                ):
+                # Dependency edges require the same actual topology link. Inspect both
+                # directions so input/symptom ordering cannot create or remove an edge.
+                interface_sym = next((sym for sym in (sym_a, sym_b)
+                                      if sym.category == SymptomCategory.INTERFACE_DOWN), None)
+                ospf_sym = next((sym for sym in (sym_a, sym_b)
+                                 if sym.category in {
+                                     SymptomCategory.OSPF_ADJACENCY_LOST,
+                                     SymptomCategory.OSPF_ADJACENCY_DEGRADED,
+                                 }), None)
+                interface_link = None
+                adjacency_link = None
+                if interface_sym and ospf_sym:
+                    iface_parts = interface_sym.affected_component.split(":")
+                    if len(iface_parts) == 3:
+                        endpoint = tuple(iface_parts[1:])
+                        interface_link = next((link.link_id for link in topo_graph.topology.links
+                                               if endpoint in {
+                                                   (link.router_a, link.interface_a),
+                                                   (link.router_b, link.interface_b),
+                                               }), None)
+                    ospf_parts = ospf_sym.affected_component.removeprefix("adj:").split("→")
+                    if len(ospf_parts) == 2:
+                        adjacency_link = topo_graph.find_link_between(*ospf_parts)
+                if interface_link is not None and interface_link == adjacency_link:
+                    iface_component = interface_sym.affected_component
+                    ospf_component = ospf_sym.affected_component
                     relationships.append(CorrelationRelationship(
-                        from_component=comp_a,
-                        to_component=comp_b,
+                        from_component=iface_component,
+                        to_component=ospf_component,
                         relationship_kind="OSPF_TOPOLOGY",
                         supporting_evidence_ids=(
                             sym_a.supporting_evidence_ids + sym_b.supporting_evidence_ids
                         ),
                         explanation=(
-                            f"Interface DOWN ({comp_a}) and OSPF adjacency issue ({comp_b}) "
+                            f"Interface DOWN ({iface_component}) and OSPF adjacency issue "
+                            f"({ospf_component}) on link {interface_link} "
                             f"may be related: a physical interface down event can cause "
                             f"OSPF adjacency loss after dead-timer expiry (~40s). "
                             f"This is a possible dependency, not a confirmed causation."
@@ -1062,8 +1128,8 @@ class CorrelationEngine:
         GroundTruthLeakageError
             If any forbidden token is found in the snapshot payload.
         """
-        # Check snapshot metadata (not the scenario filename)
-        metadata_keys = ["snapshot_id", "schema_version", "router_ids", "collector_errors"]
+        # Validate all metadata, including topology. Scenario filenames are never input.
+        metadata_keys = [key for key in snapshot_dict if key != "evidence_records"]
         for key in metadata_keys:
             value = str(snapshot_dict.get(key, "")).lower()
             for token in GROUND_TRUTH_FORBIDDEN_TOKENS:

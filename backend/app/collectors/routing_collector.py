@@ -52,9 +52,8 @@ class RoutingCollector(BaseCollector):
     ) -> list[EvidenceRecord]:
         target_routers = self.filter_router_ids(router_ids)
         records: list[EvidenceRecord] = []
-        now = self.now_utc()
-
         for rid in target_routers:
+            now = self.now_utc()
             if not self.transport.is_router_running(rid):
                 for prefix in self.baseline_prefixes:
                     records.append(
@@ -65,7 +64,7 @@ class RoutingCollector(BaseCollector):
                             source_interface=None,
                             event_type="ROUTER_UNAVAILABLE",
                             observed_at=now,
-                            collected_at=now,
+                            collected_at=self.now_utc(),
                             source_type=EvidenceSourceType.ROUTING_TABLE,
                             collection_method=CollectionMethod.PERIODIC_POLL,
                             collection_status=ObservationStatus.COLLECTION_FAILED,
@@ -95,7 +94,7 @@ class RoutingCollector(BaseCollector):
                             source_interface=None,
                             event_type="COMMAND_FAILED",
                             observed_at=now,
-                            collected_at=now,
+                            collected_at=self.now_utc(),
                             source_type=EvidenceSourceType.ROUTING_TABLE,
                             collection_method=CollectionMethod.PERIODIC_POLL,
                             collection_status=ObservationStatus.COLLECTION_FAILED,
@@ -122,7 +121,7 @@ class RoutingCollector(BaseCollector):
                             source_interface=None,
                             event_type="PARSE_FAILED",
                             observed_at=now,
-                            collected_at=now,
+                            collected_at=self.now_utc(),
                             source_type=EvidenceSourceType.ROUTING_TABLE,
                             collection_method=CollectionMethod.PERIODIC_POLL,
                             collection_status=ObservationStatus.UNKNOWN,
@@ -160,33 +159,34 @@ class RoutingCollector(BaseCollector):
 
                     metric = route.get("metric")
                     nexthops = route.get("nexthops", [])
-                    first_nh = nexthops[0] if nexthops else {}
-                    nh_ip = first_nh.get("ip")
-                    nh_iface = first_nh.get("interfaceName")
-
                     observed_prefixes.add(prefix)
-
-                    records.append(
-                        RouteObservation(
-                            evidence_id=self.generate_evidence_id(rid, self._prefix_tag(prefix)),
-                            incident_id=incident_id,
-                            source_router=rid,
-                            source_interface=nh_iface or None,
-                            event_type="ROUTE_OBSERVED",
-                            observed_at=now,
-                            collected_at=now,
-                            source_type=EvidenceSourceType.ROUTING_TABLE,
-                            collection_method=CollectionMethod.PERIODIC_POLL,
-                            collection_status=ObservationStatus.OBSERVED,
-                            destination_prefix=prefix,
-                            next_hop_address=nh_ip,
-                            next_hop_interface=nh_iface,
-                            route_type=proto_code,
-                            metric=metric if isinstance(metric, int) else None,
-                            is_present=True,
-                            raw_reference=f"vtysh:show ip route {prefix}",
+                    # Preserve every ECMP egress, not just the first route next hop.
+                    for next_hop in nexthops or [{}]:
+                        nh_ip = next_hop.get("ip")
+                        nh_iface = next_hop.get("interfaceName")
+                        records.append(
+                            RouteObservation(
+                                evidence_id=self.generate_evidence_id(
+                                    rid, self._prefix_tag(prefix)
+                                ),
+                                incident_id=incident_id,
+                                source_router=rid,
+                                source_interface=nh_iface or None,
+                                event_type="ROUTE_OBSERVED",
+                                observed_at=now,
+                                collected_at=self.now_utc(),
+                                source_type=EvidenceSourceType.ROUTING_TABLE,
+                                collection_method=CollectionMethod.PERIODIC_POLL,
+                                collection_status=ObservationStatus.OBSERVED,
+                                destination_prefix=prefix,
+                                next_hop_address=nh_ip,
+                                next_hop_interface=nh_iface,
+                                route_type=proto_code,
+                                metric=metric if isinstance(metric, int) else None,
+                                is_present=True,
+                                raw_reference=f"vtysh:show ip route {prefix}",
+                            )
                         )
-                    )
 
             # Check if expected baseline prefixes are missing from the routing table
             for expected_prefix in self.baseline_prefixes:
@@ -201,7 +201,7 @@ class RoutingCollector(BaseCollector):
                             source_interface=None,
                             event_type="ROUTE_MISSING",
                             observed_at=now,
-                            collected_at=now,
+                            collected_at=self.now_utc(),
                             source_type=EvidenceSourceType.ROUTING_TABLE,
                             collection_method=CollectionMethod.PERIODIC_POLL,
                             collection_status=ObservationStatus.OBSERVED,

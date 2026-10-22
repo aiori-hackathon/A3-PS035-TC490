@@ -15,9 +15,9 @@ DESIGN INVARIANTS:
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -135,14 +135,14 @@ class EvidenceRecord(BaseModel):
         max_length=512,
     )
 
-    @field_validator("observed_at", "collected_at", mode="before")
+    @field_validator("observed_at", "collected_at", mode="after")
     @classmethod
     def validate_utc_aware(cls, v: Any) -> Any:
         if isinstance(v, datetime) and v.tzinfo is None:
             raise ValueError(
                 f"Timestamps must be timezone-aware UTC datetimes. Got naive datetime: {v!r}"
             )
-        return v
+        return v.astimezone(UTC)
 
 
 # ---------------------------------------------------------------------------
@@ -221,14 +221,32 @@ class OSPFObservation(EvidenceRecord):
         description="Seconds remaining on the OSPF dead timer. None if not available.",
     )
 
+    observed_interface_config: dict[str, Any] | None = Field(
+        default=None,
+        description="Actual FRR show ip ospf interface json entry; never expected configuration.",
+    )
+    interface_config_observed_at: datetime | None = None
+
+
+class PingAttemptFailure(EvidenceRecord):
+    """An attempted probe with no measured statistics; requests are not results."""
+
+    target_address: str
+    source_address: str | None = None
+    probe_source: str
+    requested_packets: int = Field(ge=1, le=20)
+    collection_status: Literal[ObservationStatus.COLLECTION_FAILED] = (
+        ObservationStatus.COLLECTION_FAILED
+    )
+
 
 class PingMeasurement(EvidenceRecord):
     """Result of a bounded diagnostic ICMP ping probe.
 
     Probes are strictly read-only and bounded (see probe.py for request contract).
-    A failed probe (timeout, unreachable) is recorded with collection_status=COLLECTION_FAILED
-    and packet_loss_pct=100.0. A probe with no response MUST NOT be automatically
-    inferred as a router or link failure without corroborating evidence.
+    Measured zero replies retain the actual transmission/loss counts. Execution
+    without statistics produces PingAttemptFailure, never fabricated measurements.
+    No response alone does not establish a router or link failure.
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -270,6 +288,12 @@ class PingMeasurement(EvidenceRecord):
         description="Router ID that executed this probe.",
         pattern=r"^R[1-9][0-9]*$",
     )
+
+    # Additive fields: legacy observations keep None rather than invented values.
+    packets_lost: int | None = Field(default=None, ge=0)
+    source_address: str | None = None
+    rtt_unit: Literal["ms"] = "ms"
+    rtt_mdev_ms: float | None = Field(default=None, ge=0)
 
     @field_validator("packets_received")
     @classmethod
@@ -380,4 +404,3 @@ class TracerouteObservation(EvidenceRecord):
         default=False,
         description="Whether the target destination was reached.",
     )
-

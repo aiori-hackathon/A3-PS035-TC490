@@ -17,6 +17,7 @@ from app.schemas.evidence import (
     EvidenceRecord,
     EvidenceSourceType,
     ObservationStatus,
+    PingAttemptFailure,
     PingMeasurement,
 )
 
@@ -61,7 +62,8 @@ class PingCollector(BaseCollector):
         r"(\d+)\s+packets transmitted,\s+(\d+)\s+(?:packets\s+)?received,\s+([\d.]+)%\s+packet loss"
     )
     RTT_PATTERN: ClassVar[re.Pattern] = re.compile(
-        r"(?:round-trip|rtt)\s+min/avg/max(?:/mdev)?\s*=\s*([\d.]+)/([\d.]+)/([\d.]+)"
+        r"(?:round-trip|rtt)\s+min/avg/max(?:/mdev)?\s*=\s*"
+        r"([\d.]+)/([\d.]+)/([\d.]+)(?:/([\d.]+))?\s*ms\b"
     )
 
     def probe(
@@ -71,7 +73,8 @@ class PingCollector(BaseCollector):
         count: int = 5,
         timeout_s: int = 1,
         incident_id: str | None = None,
-    ) -> PingMeasurement:
+        source_address: str | None = None,
+    ) -> PingMeasurement | PingAttemptFailure:
         """Execute a single bounded ping probe and return a PingMeasurement record."""
         src = source_router.upper()
         if src not in self.filter_router_ids(None):
@@ -83,14 +86,25 @@ class PingCollector(BaseCollector):
             )
 
         # Enforce parameter bounds
-        bounded_count = max(1, min(count, 50))
+        if not 1 <= count <= 20:
+            raise ValueError("Probe count must be between 1 and 20")
+        if source_address is not None:
+            from app.collectors.topology_collector import EXPECTED_ROUTERS_METADATA
+
+            addresses = {
+                i["ipv4"].split("/")[0]
+                for i in EXPECTED_ROUTERS_METADATA[src]["interfaces"].values()
+            }
+            if source_address not in addresses:
+                raise SecurityViolationError("Source address is not assigned to this NEXORA router")
+        bounded_count = count
         bounded_timeout = max(1, min(timeout_s, 10))
 
         now = self.now_utc()
         evidence_id = self.generate_evidence_id(src, f"to-{target_address.replace('.', '-')}")
 
         if not self.transport.is_router_running(src):
-            return PingMeasurement(
+            return PingAttemptFailure(
                 evidence_id=evidence_id,
                 incident_id=incident_id,
                 source_router=src,
@@ -98,17 +112,13 @@ class PingCollector(BaseCollector):
                 source_interface=None,
                 event_type="PROBE_SOURCE_UNAVAILABLE",
                 observed_at=now,
-                collected_at=now,
+                collected_at=self.now_utc(),
                 source_type=EvidenceSourceType.ACTIVE_PING,
                 collection_method=CollectionMethod.TRIGGERED_PROBE,
                 collection_status=ObservationStatus.COLLECTION_FAILED,
                 target_address=target_address,
-                packets_sent=bounded_count,
-                packets_received=0,
-                packet_loss_pct=100.0,
-                rtt_min_ms=None,
-                rtt_avg_ms=None,
-                rtt_max_ms=None,
+                requested_packets=bounded_count,
+                source_address=source_address,
                 raw_reference=f"source router {src} unavailable",
             )
 
@@ -121,6 +131,9 @@ class PingCollector(BaseCollector):
             target_address,
         ]
 
+        if source_address is not None:
+            cmd[-1:-1] = ["-I", source_address]
+
         total_timeout = float(bounded_count * bounded_timeout + 3.0)
         code, stdout, stderr = self.transport.execute(src, cmd, timeout=total_timeout)
         combined_output = f"{stdout}\n{stderr}"
@@ -129,7 +142,7 @@ class PingCollector(BaseCollector):
         stat_match = self.STAT_PATTERN.search(combined_output)
         if not stat_match:
             # Command failed completely without statistics
-            return PingMeasurement(
+            return PingAttemptFailure(
                 evidence_id=evidence_id,
                 incident_id=incident_id,
                 source_router=src,
@@ -137,17 +150,13 @@ class PingCollector(BaseCollector):
                 source_interface=None,
                 event_type="PROBE_EXECUTION_FAILED",
                 observed_at=now,
-                collected_at=now,
+                collected_at=self.now_utc(),
                 source_type=EvidenceSourceType.ACTIVE_PING,
                 collection_method=CollectionMethod.TRIGGERED_PROBE,
                 collection_status=ObservationStatus.COLLECTION_FAILED,
                 target_address=target_address,
-                packets_sent=bounded_count,
-                packets_received=0,
-                packet_loss_pct=100.0,
-                rtt_min_ms=None,
-                rtt_avg_ms=None,
-                rtt_max_ms=None,
+                requested_packets=bounded_count,
+                source_address=source_address,
                 raw_reference=f"ping failed: {stderr.strip()[:100]}",
             )
 
@@ -161,13 +170,16 @@ class PingCollector(BaseCollector):
         rtt_min: float | None = None
         rtt_avg: float | None = None
         rtt_max: float | None = None
+        rtt_mdev: float | None = None
 
         if received > 0:
             rtt_match = self.RTT_PATTERN.search(combined_output)
             if rtt_match:
-                rtt_min = round(float(rtt_match.group(1)), 3)
-                rtt_avg = round(float(rtt_match.group(2)), 3)
-                rtt_max = round(float(rtt_match.group(3)), 3)
+                rtt_min = float(rtt_match.group(1))
+                rtt_avg = float(rtt_match.group(2))
+                rtt_max = float(rtt_match.group(3))
+                if rtt_match.group(4) is not None:
+                    rtt_mdev = float(rtt_match.group(4))
 
         status = ObservationStatus.OBSERVED
         event_type = "PING_PROBE_SUCCESS" if received > 0 else "PING_PROBE_LOST"
@@ -180,18 +192,21 @@ class PingCollector(BaseCollector):
             source_interface=None,
             event_type=event_type,
             observed_at=now,
-            collected_at=now,
+            collected_at=self.now_utc(),
             source_type=EvidenceSourceType.ACTIVE_PING,
             collection_method=CollectionMethod.TRIGGERED_PROBE,
             collection_status=status,
             target_address=target_address,
+            source_address=source_address,
+            packets_lost=sent - received,
             packets_sent=sent,
             packets_received=received,
             packet_loss_pct=exact_loss,
             rtt_min_ms=rtt_min,
             rtt_avg_ms=rtt_avg,
             rtt_max_ms=rtt_max,
-            raw_reference=f"ping -c {bounded_count} -W {bounded_timeout} {target_address}",
+            rtt_mdev_ms=rtt_mdev,
+            raw_reference=" ".join(cmd),
         )
 
     def collect(

@@ -1,0 +1,23 @@
+{
+  "schema_version": "2.0",
+  "phase": "06.4",
+  "baseline_snapshot_path": "evaluation/datasets/observations/baseline_snapshot.json",
+  "limitations": [
+    "Supervised single-trial live F1 validation on link L12. Not a claim of 100% multi-fault accuracy.",
+    "Contemporaneous capture binding binds snapshot obs-snap-20261021T113754Z-520097 to controller run exp-aab6c8bcaad34acfaa7583d3ea391948.",
+    "Reset began after observation window completed; recovery was confirmed healthy."
+  ],
+  "cases": [
+    {
+      "case_id": "f1live001",
+      "scenario_id": "F1_LINK_FAILURE",
+      "target": "L12",
+      "snapshot_path": "evaluation/datasets/observations/live/f1_link_failure_snapshot.json",
+      "truth_path": "evaluation/datasets/sidecars/f1-exp-aab6c8bcaad34acfaa7583d3ea391948/truth.json",
+      "capture_binding_path": "evaluation/datasets/sidecars/f1-exp-aab6c8bcaad34acfaa7583d3ea391948/binding.json",
+      "provenance_path": "evaluation/datasets/sidecars/f1-exp-aab6c8bcaad34acfaa7583d3ea391948/provenance.json",
+      "association_status": "VERIFIED_LIVE_RUN",
+      "association_basis": "Contemporaneous capture binding and provenance; canonical JSON SHA256 verified."
+    }
+  ]
+}

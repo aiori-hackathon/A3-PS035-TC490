@@ -1,0 +1,116 @@
+{
+  "diagnoses": [
+    {
+      "diagnosed_at": "2026-10-22T19:41:25.218840Z",
+      "engine_version": "phase06-rules-v1.1",
+      "evidence_certificate": {
+        "certificate_id": "cert-4ef899384e4e4b8080c5b8f96906e1c9",
+        "collection_coverage_pct": 100.0,
+        "contradictory_evidence_count": 1,
+        "evidence_sufficiency_met": true,
+        "generated_at": "2026-10-22T19:41:25.218854Z",
+        "incident_id": "incident-8fe433c66ab293e2",
+        "missing_evidence_descriptions": [],
+        "reasoning_summary": "DIAGNOSED. Leading candidate LINK_FAILURE at L12, heuristic score 0.75. +0.70: Direct physical interface down family; repeated polls add no weight. Evidence: [ev-interface-r1-1792582675753-3ac931-eth1]. +0.15: Adjacency-loss family; dependent on physical state when present. Evidence: [ev-ospf-r1-1792582676207-4e1b54-2-2-2-2]. -0.10: FULL adjacency conflicts with persistent link loss; dead-timer lag possible. Evidence: [ev-ospf-r2-1792582676407-f541c7-1-1-1-1]. Scores are heuristic alignment values, not calibrated probabilities.",
+        "score_interpretation": "Rule scores are dimensionless heuristic values in [0.0, 1.0] produced by deterministic rules. They are NOT calibrated statistical probabilities.",
+        "supporting_evidence_count": 2,
+        "total_evidence_count": 103
+      },
+      "incident_id": "incident-8fe433c66ab293e2",
+      "missing_information": [],
+      "ranked_hypotheses": [
+        {
+          "hypothesis": {
+            "contradictory_evidence_ids": [
+              "ev-ospf-r2-1792582676407-f541c7-1-1-1-1"
+            ],
+            "counterfactual_verified": null,
+            "fault_location": {
+              "affected_routers": [
+                "R1",
+                "R2"
+              ],
+              "component_id": "L12",
+              "kind": "LINK"
+            },
+            "fault_type": "LINK_FAILURE",
+            "hypothesis_id": "h-link_failure-l12",
+            "incident_id": "incident-8fe433c66ab293e2",
+            "missing_evidence_descriptions": [],
+            "reasoning_trace": [
+              "+0.70: Direct physical interface down family; repeated polls add no weight. Evidence: [ev-interface-r1-1792582675753-3ac931-eth1].",
+              "+0.15: Adjacency-loss family; dependent on physical state when present. Evidence: [ev-ospf-r1-1792582676207-4e1b54-2-2-2-2].",
+              "-0.10: FULL adjacency conflicts with persistent link loss; dead-timer lag possible. Evidence: [ev-ospf-r2-1792582676407-f541c7-1-1-1-1]."
+            ],
+            "rule_score": 0.75,
+            "supporting_evidence_ids": [
+              "ev-interface-r1-1792582675753-3ac931-eth1",
+              "ev-ospf-r1-1792582676207-4e1b54-2-2-2-2"
+            ]
+          },
+          "rank": 1
+        }
+      ],
+      "result_id": "dr-c92dc99b79b445c8957f1cd88ff2e0a6",
+      "status": "DIAGNOSED",
+      "top1_hypothesis": {
+        "contradictory_evidence_ids": [
+          "ev-ospf-r2-1792582676407-f541c7-1-1-1-1"
+        ],
+        "counterfactual_verified": null,
+        "fault_location": {
+          "affected_routers": [
+            "R1",
+            "R2"
+          ],
+          "component_id": "L12",
+          "kind": "LINK"
+        },
+        "fault_type": "LINK_FAILURE",
+        "hypothesis_id": "h-link_failure-l12",
+        "incident_id": "incident-8fe433c66ab293e2",
+        "missing_evidence_descriptions": [],
+        "reasoning_trace": [
+          "+0.70: Direct physical interface down family; repeated polls add no weight. Evidence: [ev-interface-r1-1792582675753-3ac931-eth1].",
+          "+0.15: Adjacency-loss family; dependent on physical state when present. Evidence: [ev-ospf-r1-1792582676207-4e1b54-2-2-2-2].",
+          "-0.10: FULL adjacency conflicts with persistent link loss; dead-timer lag possible. Evidence: [ev-ospf-r2-1792582676407-f541c7-1-1-1-1]."
+        ],
+        "rule_score": 0.75,
+        "supporting_evidence_ids": [
+          "ev-interface-r1-1792582675753-3ac931-eth1",
+          "ev-ospf-r1-1792582676207-4e1b54-2-2-2-2"
+        ]
+      },
+      "top3_hypotheses": [
+        {
+          "contradictory_evidence_ids": [
+            "ev-ospf-r2-1792582676407-f541c7-1-1-1-1"
+          ],
+          "counterfactual_verified": null,
+          "fault_location": {
+            "affected_routers": [
+              "R1",
+              "R2"
+            ],
+            "component_id": "L12",
+            "kind": "LINK"
+          },
+          "fault_type": "LINK_FAILURE",
+          "hypothesis_id": "h-link_failure-l12",
+          "incident_id": "incident-8fe433c66ab293e2",
+          "missing_evidence_descriptions": [],
+          "reasoning_trace": [
+            "+0.70: Direct physical interface down family; repeated polls add no weight. Evidence: [ev-interface-r1-1792582675753-3ac931-eth1].",
+            "+0.15: Adjacency-loss family; dependent on physical state when present. Evidence: [ev-ospf-r1-1792582676207-4e1b54-2-2-2-2].",
+            "-0.10: FULL adjacency conflicts with persistent link loss; dead-timer lag possible. Evidence: [ev-ospf-r2-1792582676407-f541c7-1-1-1-1]."
+          ],
+          "rule_score": 0.75,
+          "supporting_evidence_ids": [
+            "ev-interface-r1-1792582675753-3ac931-eth1",
+            "ev-ospf-r1-1792582676207-4e1b54-2-2-2-2"
+          ]
+        }
+      ]
+    }
+  ]
+}

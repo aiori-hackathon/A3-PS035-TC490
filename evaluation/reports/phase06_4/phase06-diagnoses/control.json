@@ -1,0 +1,32 @@
+{
+  "diagnoses": [
+    {
+      "diagnosed_at": "2026-10-22T19:41:25.177789Z",
+      "engine_version": "phase06-rules-v1.1",
+      "evidence_certificate": {
+        "certificate_id": "cert-abbf471ff43444b18dc40375e32d5363",
+        "collection_coverage_pct": 66.67,
+        "contradictory_evidence_count": 0,
+        "evidence_sufficiency_met": false,
+        "generated_at": "2026-10-22T19:41:25.177801Z",
+        "incident_id": "incident-400cfe3751f0cb9c",
+        "missing_evidence_descriptions": [
+          "No supported fault candidate. Healthy observations do not imply a fault; untyped measurements or absent data cannot establish network health."
+        ],
+        "reasoning_summary": "INSUFFICIENT_EVIDENCE. No evidence-supported fault candidate was generated. Scores are heuristic alignment values, not calibrated probabilities.",
+        "score_interpretation": "Rule scores are dimensionless heuristic values in [0.0, 1.0] produced by deterministic rules. They are NOT calibrated statistical probabilities.",
+        "supporting_evidence_count": 0,
+        "total_evidence_count": 111
+      },
+      "incident_id": "incident-400cfe3751f0cb9c",
+      "missing_information": [
+        "No supported fault candidate. Healthy observations do not imply a fault; untyped measurements or absent data cannot establish network health."
+      ],
+      "ranked_hypotheses": [],
+      "result_id": "dr-cf6c8c3fcb954201b093f5a8c86598f4",
+      "status": "INSUFFICIENT_EVIDENCE",
+      "top1_hypothesis": null,
+      "top3_hypotheses": []
+    }
+  ]
+}

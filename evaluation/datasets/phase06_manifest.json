@@ -1,0 +1,47 @@
+{
+  "schema_version": "2.0",
+  "baseline_snapshot_path": "evaluation/datasets/observations/baseline_snapshot.json",
+  "limitations": [
+    "The original recorded snapshot serialisation retained base evidence fields but dropped typed ping/RTT/OSPF metrics. Event names are not substitutes for missing measurement values; valid abstentions are expected.",
+    "These are unverified historical scenario associations, not shared-run capture bindings: Phase03 truth precedes every Phase04 snapshot by about 80 minutes. Actual Phase04 injection/reset/recovery timestamps are missing. All five cases are NOT EVALUABLE.",
+    "Phase04 documentation describes different targets/parameters for F3 (L23, hello5/dead20), F4 (25% loss), and F5 (L23, 150ms delay) than the older Phase03 records. The original truth is preserved, not relabelled to match predictions.",
+    "The Phase03 recovery timestamp follows reset and convergence polling; it is not the reset-command timestamp. A future capture binding must record reset_started_at separately. No historical binding or missing timestamp has been fabricated."
+  ],
+  "cases": [
+    {
+      "case_id": "001",
+      "snapshot_path": "evaluation/datasets/observations/f1_link_failure_snapshot.json",
+      "truth_path": "docs/phase-reports/ground_truth/gt-exp-20261019T174156Z-443cd9.json",
+      "association_status": "UNVERIFIED_CROSS_RUN",
+      "association_basis": "Historical scenario/path declaration only; no contemporaneous capture binding exists."
+    },
+    {
+      "case_id": "002",
+      "snapshot_path": "evaluation/datasets/observations/f2_router_failure_snapshot.json",
+      "truth_path": "docs/phase-reports/ground_truth/gt-exp-20261019T174231Z-3a565c.json",
+      "association_status": "UNVERIFIED_CROSS_RUN",
+      "association_basis": "Historical scenario/path declaration only; no contemporaneous capture binding exists."
+    },
+    {
+      "case_id": "003",
+      "snapshot_path": "evaluation/datasets/observations/f3_ospf_mismatch_snapshot.json",
+      "truth_path": "docs/phase-reports/ground_truth/gt-exp-20261019T174322Z-5b7e56.json",
+      "association_status": "UNVERIFIED_CROSS_RUN",
+      "association_basis": "Historical scenario/path declaration only; no contemporaneous capture binding exists."
+    },
+    {
+      "case_id": "004",
+      "snapshot_path": "evaluation/datasets/observations/f4_packet_loss_snapshot.json",
+      "truth_path": "docs/phase-reports/ground_truth/gt-exp-20261019T174351Z-3ade9b.json",
+      "association_status": "UNVERIFIED_CROSS_RUN",
+      "association_basis": "Historical scenario/path declaration only; no contemporaneous capture binding exists."
+    },
+    {
+      "case_id": "005",
+      "snapshot_path": "evaluation/datasets/observations/f5_high_latency_snapshot.json",
+      "truth_path": "docs/phase-reports/ground_truth/gt-exp-20261019T174419Z-fa5cec.json",
+      "association_status": "UNVERIFIED_CROSS_RUN",
+      "association_basis": "Historical scenario/path declaration only; no contemporaneous capture binding exists."
+    }
+  ]
+}

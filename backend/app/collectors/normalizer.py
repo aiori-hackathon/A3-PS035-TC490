@@ -13,11 +13,14 @@ from __future__ import annotations
 from datetime import UTC
 from typing import Any
 
+from pydantic import ValidationError
+
 from app.schemas.evidence import (
     EvidenceRecord,
     EvidenceSourceType,
     InterfaceObservation,
     OSPFObservation,
+    PingAttemptFailure,
     PingMeasurement,
     RouteObservation,
     SyslogEvent,
@@ -35,11 +38,14 @@ GROUND_TRUTH_FORBIDDEN_TOKENS: tuple[str, ...] = (
     "f1_link_failure",
     "f2_router_failure",
     "f3_ospf_config_mismatch",
+    "f3_ospf_mismatch",
     "f4_packet_loss",
     "f5_high_latency",
     "seeded_fault",
     "injected_loss",
     "injected_delay",
+    "actual_fault_location",
+    "scenario_id",
 )
 
 
@@ -49,6 +55,17 @@ class EvidenceNormalizer:
     @classmethod
     def assert_no_ground_truth_leakage(cls, record_dict: dict[str, Any]) -> None:
         """Scan a record dict for any ground-truth identifiers or labels."""
+        def check_keys(value: Any) -> None:
+            if isinstance(value, dict):
+                if any(str(key).lower() == "ground_truth" for key in value):
+                    raise GroundTruthLeakageError("Ground-truth metadata is not inference input")
+                for child in value.values():
+                    check_keys(child)
+            elif isinstance(value, list):
+                for child in value:
+                    check_keys(child)
+
+        check_keys(record_dict)
         serialized = str(record_dict).lower()
         for token in GROUND_TRUTH_FORBIDDEN_TOKENS:
             if token in serialized:
@@ -61,12 +78,12 @@ class EvidenceNormalizer:
         """Validate and normalize timestamps and fields of an EvidenceRecord."""
         # Ensure UTC timezone awareness
         if record.observed_at.tzinfo is None:
-            record.observed_at = record.observed_at.replace(tzinfo=UTC)
+            raise ValueError("Naive observation timestamp cannot be repaired by assuming UTC")
         else:
             record.observed_at = record.observed_at.astimezone(UTC)
 
         if record.collected_at.tzinfo is None:
-            record.collected_at = record.collected_at.replace(tzinfo=UTC)
+            raise ValueError("Naive collection timestamp cannot be repaired by assuming UTC")
         else:
             record.collected_at = record.collected_at.astimezone(UTC)
 
@@ -99,6 +116,8 @@ class EvidenceNormalizer:
         will not be available for those records.
         """
         source_type = data.get("source_type")
+        if source_type == "ACTIVE_PING" and "requested_packets" in data:
+            return PingAttemptFailure.model_validate(data)
 
         subclass_map: dict[str, type[EvidenceRecord]] = {
             EvidenceSourceType.INTERFACE_POLL.value: InterfaceObservation,
@@ -113,10 +132,11 @@ class EvidenceNormalizer:
         if subclass is not None:
             try:
                 return subclass.model_validate(data)
-            except Exception:
-                # Typed subclass fields missing (legacy/lossy snapshot) —
-                # fall back to base EvidenceRecord to preserve the record.
-                pass
+            except ValidationError as exc:
+                # Only truly lossy legacy records may fall back. Invalid metrics
+                # must not silently become apparently valid base observations.
+                if any(error["type"] != "missing" for error in exc.errors()):
+                    raise
 
         # Fallback: base EvidenceRecord.
         # Because EvidenceRecord has extra="forbid", we must strip any subclass-
@@ -128,4 +148,3 @@ class EvidenceNormalizer:
         if base_data.get("source_type") not in valid_source_types:
             base_data.pop("source_type", None)
         return EvidenceRecord.model_validate(base_data)
-

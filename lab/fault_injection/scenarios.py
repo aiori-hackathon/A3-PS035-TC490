@@ -12,12 +12,14 @@ Concrete implementations of the five fault injection scenarios:
 
 from __future__ import annotations
 
+import json
 import logging
 import subprocess
 from abc import ABC, abstractmethod
 from typing import Any
 
 from app.schemas.hypothesis import FaultLocation, FaultLocationKind, FaultType
+
 from lab.fault_injection.models import (
     APPROVED_DATA_INTERFACES,
     APPROVED_LINKS,
@@ -42,7 +44,25 @@ class InvalidTargetError(Exception):
 
 def _run_docker(cmd: list[str], timeout: int = 20) -> tuple[int, str]:
     """Execute a safe Docker command with timeout (no shell=True)."""
+    if len(cmd) < 3 or cmd[0] != "docker" or cmd[1] not in {"exec", "start", "stop"}:
+        raise SecurityViolationError("Only scoped NEXORA container commands are allowed")
+    container = cmd[2]
+    if container not in APPROVED_ROUTER_CONTAINERS:
+        raise SecurityViolationError("Unapproved Docker project/container")
     try:
+        inspected = subprocess.run(
+            ["docker", "inspect", "--format", "{{json .Config.Labels}}", container],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        labels = json.loads(inspected.stdout) if inspected.returncode == 0 else {}
+        if (
+            not isinstance(labels, dict)
+            or labels.get("com.docker.compose.project") != "nexora"
+            or (labels.get("com.docker.compose.service") != container.removeprefix("nexora-"))
+        ):
+            raise SecurityViolationError("Container ownership is not the approved NEXORA service")
         proc = subprocess.run(
             cmd,
             capture_output=True,
@@ -94,9 +114,14 @@ class LinkFailureScenario(BaseScenario):
 
     def validate_target(self, target: str, **params: Any) -> None:
         if target.lower() in [i.lower() for i in FORBIDDEN_INTERFACES]:
-            raise SecurityViolationError(f"Targeting management or loopback interface '{target}' is strictly forbidden!")
+            raise SecurityViolationError(
+                f"Targeting management or loopback interface '{target}' is strictly forbidden!"
+            )
         if target.upper() not in APPROVED_LINKS:
-            raise InvalidTargetError(f"Target '{target}' is not an approved link. Must be one of {sorted(APPROVED_LINKS)}")
+            raise InvalidTargetError(
+                f"Target '{target}' is not an approved link. "
+                f"Must be one of {sorted(APPROVED_LINKS)}"
+            )
 
     def inject(self, target: str, **params: Any) -> dict[str, Any]:
         target = target.upper()
@@ -166,7 +191,10 @@ class RouterFailureScenario(BaseScenario):
             ctr = t.lower()
             r_name = APPROVED_ROUTER_CONTAINERS[ctr]
             return r_name, ctr
-        raise InvalidTargetError(f"Target '{target}' is not an approved router. Must be one of {sorted(APPROVED_ROUTERS)}")
+        raise InvalidTargetError(
+            f"Target '{target}' is not an approved router. "
+            f"Must be one of {sorted(APPROVED_ROUTERS)}"
+        )
 
     def validate_target(self, target: str, **params: Any) -> None:
         self._normalize_router(target)
@@ -226,11 +254,16 @@ class OSPFConfigMismatchScenario(BaseScenario):
         if t in APPROVED_LINKS:
             endpoint = LINK_ENDPOINTS[t]
             return t, endpoint["router_a"], endpoint["interface_a"]
-        raise InvalidTargetError(f"Target '{target}' is not an approved link for OSPF config mismatch. Must be in {sorted(APPROVED_LINKS)}")
+        raise InvalidTargetError(
+            f"Target '{target}' is not an approved link for OSPF config mismatch. "
+            f"Must be in {sorted(APPROVED_LINKS)}"
+        )
 
     def validate_target(self, target: str, **params: Any) -> None:
         if target.lower() in [i.lower() for i in FORBIDDEN_INTERFACES]:
-            raise SecurityViolationError(f"Targeting management interface '{target}' is strictly forbidden!")
+            raise SecurityViolationError(
+                f"Targeting management interface '{target}' is strictly forbidden!"
+            )
         self._resolve_link(target)
 
     def inject(self, target: str, **params: Any) -> dict[str, Any]:
@@ -238,13 +271,27 @@ class OSPFConfigMismatchScenario(BaseScenario):
         mismatch_hello = int(params.get("hello_interval", 5))
         mismatch_dead = int(params.get("dead_interval", 15))
 
-        logger.info("Injecting OSPF_CONFIG_MISMATCH on %s (%s %s: hello=%ds dead=%ds)", link_id, router, interface, mismatch_hello, mismatch_dead)
+        logger.info(
+            "Injecting OSPF_CONFIG_MISMATCH on %s (%s %s: hello=%ds dead=%ds)",
+            link_id,
+            router,
+            interface,
+            mismatch_hello,
+            mismatch_dead,
+        )
         cmd = [
-            "docker", "exec", router, "vtysh",
-            "-c", "configure terminal",
-            "-c", f"interface {interface}",
-            "-c", f"ip ospf hello-interval {mismatch_hello}",
-            "-c", f"ip ospf dead-interval {mismatch_dead}",
+            "docker",
+            "exec",
+            router,
+            "vtysh",
+            "-c",
+            "configure terminal",
+            "-c",
+            f"interface {interface}",
+            "-c",
+            f"ip ospf hello-interval {mismatch_hello}",
+            "-c",
+            f"ip ospf dead-interval {mismatch_dead}",
         ]
         rc, out = _run_docker(cmd)
         if rc != 0:
@@ -267,18 +314,35 @@ class OSPFConfigMismatchScenario(BaseScenario):
         orig_hello = injected_details.get("original_hello", 10)
         orig_dead = injected_details.get("original_dead", 40)
 
-        logger.info("Restoring OSPF_CONFIG_MISMATCH on %s (%s %s: hello=%ds dead=%ds)", link_id, router, interface, orig_hello, orig_dead)
+        logger.info(
+            "Restoring OSPF_CONFIG_MISMATCH on %s (%s %s: hello=%ds dead=%ds)",
+            link_id,
+            router,
+            interface,
+            orig_hello,
+            orig_dead,
+        )
         cmd = [
-            "docker", "exec", router, "vtysh",
-            "-c", "configure terminal",
-            "-c", f"interface {interface}",
-            "-c", f"ip ospf hello-interval {orig_hello}",
-            "-c", f"ip ospf dead-interval {orig_dead}",
-            "-c", "ip ospf network point-to-point",
+            "docker",
+            "exec",
+            router,
+            "vtysh",
+            "-c",
+            "configure terminal",
+            "-c",
+            f"interface {interface}",
+            "-c",
+            f"ip ospf hello-interval {orig_hello}",
+            "-c",
+            f"ip ospf dead-interval {orig_dead}",
+            "-c",
+            "ip ospf network point-to-point",
         ]
         rc, out = _run_docker(cmd)
         if rc != 0:
-            raise RuntimeError(f"Failed to restore OSPF configuration on {router} {interface}: {out}")
+            raise RuntimeError(
+                f"Failed to restore OSPF configuration on {router} {interface}: {out}"
+            )
 
     def get_fault_location(self, target: str) -> FaultLocation:
         link_id, _, _ = self._resolve_link(target)
@@ -316,15 +380,22 @@ class PacketLossScenario(BaseScenario):
         elif t in APPROVED_ROUTERS or target.lower() in APPROVED_ROUTER_CONTAINERS:
             ctr = ROUTER_TO_CONTAINER.get(t, target.lower())
             if not interface or interface not in APPROVED_DATA_INTERFACES:
-                raise InvalidTargetError(f"Router target requires an approved data-plane interface ({APPROVED_DATA_INTERFACES})")
+                raise InvalidTargetError(
+                    "Router target requires an approved data-plane interface "
+                    f"({APPROVED_DATA_INTERFACES})"
+                )
             return t, ctr, interface
         raise InvalidTargetError(f"Target '{target}' is not an approved link or router.")
 
     def validate_target(self, target: str, **params: Any) -> None:
         if target.lower() in [i.lower() for i in FORBIDDEN_INTERFACES]:
-            raise SecurityViolationError(f"Targeting management interface '{target}' is strictly forbidden!")
+            raise SecurityViolationError(
+                f"Targeting management interface '{target}' is strictly forbidden!"
+            )
         if "interface" in params and params["interface"] in FORBIDDEN_INTERFACES:
-            raise SecurityViolationError(f"Interface '{params['interface']}' is a management/forbidden interface!")
+            raise SecurityViolationError(
+                f"Interface '{params['interface']}' is a management/forbidden interface!"
+            )
         self._resolve_target(target, params.get("interface"))
         loss_pct = params.get("loss_pct", 30)
         if not isinstance(loss_pct, int) or not (1 <= loss_pct <= 100):
@@ -335,11 +406,30 @@ class PacketLossScenario(BaseScenario):
         loss_pct = int(params.get("loss_pct", 30))
         self.validate_target(target, loss_pct=loss_pct, interface=interface)
 
-        logger.info("Injecting PACKET_LOSS on %s (%s dev %s: netem loss %d%%)", comp_id, router, interface, loss_pct)
+        logger.info(
+            "Injecting PACKET_LOSS on %s (%s dev %s: netem loss %d%%)",
+            comp_id,
+            router,
+            interface,
+            loss_pct,
+        )
         # Clear any existing root qdisc safely first
         _run_docker(["docker", "exec", router, "tc", "qdisc", "del", "dev", interface, "root"])
 
-        cmd = ["docker", "exec", router, "tc", "qdisc", "add", "dev", interface, "root", "netem", "loss", f"{loss_pct}%"]
+        cmd = [
+            "docker",
+            "exec",
+            router,
+            "tc",
+            "qdisc",
+            "add",
+            "dev",
+            interface,
+            "root",
+            "netem",
+            "loss",
+            f"{loss_pct}%",
+        ]
         rc, out = _run_docker(cmd)
         if rc != 0:
             raise RuntimeError(f"Failed to add tc netem loss on {router} {interface}: {out}")
@@ -358,7 +448,9 @@ class PacketLossScenario(BaseScenario):
         if not router or not interface:
             _, router, interface = self._resolve_target(target)
 
-        logger.info("Restoring PACKET_LOSS on %s (%s dev %s: tc qdisc del)", target, router, interface)
+        logger.info(
+            "Restoring PACKET_LOSS on %s (%s dev %s: tc qdisc del)", target, router, interface
+        )
         cmd = ["docker", "exec", router, "tc", "qdisc", "del", "dev", interface, "root"]
         _run_docker(cmd)
 
@@ -368,10 +460,14 @@ class PacketLossScenario(BaseScenario):
             endpoint = LINK_ENDPOINTS[comp_id]
             r_a = APPROVED_ROUTER_CONTAINERS[endpoint["router_a"]]
             r_b = APPROVED_ROUTER_CONTAINERS[endpoint["router_b"]]
-            return FaultLocation(kind=FaultLocationKind.LINK, component_id=comp_id, affected_routers=[r_a, r_b])
+            return FaultLocation(
+                kind=FaultLocationKind.LINK, component_id=comp_id, affected_routers=[r_a, r_b]
+            )
         else:
             r_name = APPROVED_ROUTER_CONTAINERS[router]
-            return FaultLocation(kind=FaultLocationKind.ROUTER, component_id=r_name, affected_routers=[r_name])
+            return FaultLocation(
+                kind=FaultLocationKind.ROUTER, component_id=r_name, affected_routers=[r_name]
+            )
 
     def get_affected_components(self, target: str) -> list[str]:
         comp_id, router, interface = self._resolve_target(target)
@@ -397,15 +493,22 @@ class HighLatencyScenario(BaseScenario):
         elif t in APPROVED_ROUTERS or target.lower() in APPROVED_ROUTER_CONTAINERS:
             ctr = ROUTER_TO_CONTAINER.get(t, target.lower())
             if not interface or interface not in APPROVED_DATA_INTERFACES:
-                raise InvalidTargetError(f"Router target requires an approved data-plane interface ({APPROVED_DATA_INTERFACES})")
+                raise InvalidTargetError(
+                    "Router target requires an approved data-plane interface "
+                    f"({APPROVED_DATA_INTERFACES})"
+                )
             return t, ctr, interface
         raise InvalidTargetError(f"Target '{target}' is not an approved link or router.")
 
     def validate_target(self, target: str, **params: Any) -> None:
         if target.lower() in [i.lower() for i in FORBIDDEN_INTERFACES]:
-            raise SecurityViolationError(f"Targeting management interface '{target}' is strictly forbidden!")
+            raise SecurityViolationError(
+                f"Targeting management interface '{target}' is strictly forbidden!"
+            )
         if "interface" in params and params["interface"] in FORBIDDEN_INTERFACES:
-            raise SecurityViolationError(f"Interface '{params['interface']}' is a management/forbidden interface!")
+            raise SecurityViolationError(
+                f"Interface '{params['interface']}' is a management/forbidden interface!"
+            )
         self._resolve_target(target, params.get("interface"))
         delay_ms = params.get("delay_ms", 100)
         if not isinstance(delay_ms, int) or not (1 <= delay_ms <= 2000):
@@ -416,11 +519,30 @@ class HighLatencyScenario(BaseScenario):
         delay_ms = int(params.get("delay_ms", 100))
         self.validate_target(target, delay_ms=delay_ms, interface=interface)
 
-        logger.info("Injecting HIGH_LATENCY on %s (%s dev %s: netem delay %dms)", comp_id, router, interface, delay_ms)
+        logger.info(
+            "Injecting HIGH_LATENCY on %s (%s dev %s: netem delay %dms)",
+            comp_id,
+            router,
+            interface,
+            delay_ms,
+        )
         # Clear any existing root qdisc safely first
         _run_docker(["docker", "exec", router, "tc", "qdisc", "del", "dev", interface, "root"])
 
-        cmd = ["docker", "exec", router, "tc", "qdisc", "add", "dev", interface, "root", "netem", "delay", f"{delay_ms}ms"]
+        cmd = [
+            "docker",
+            "exec",
+            router,
+            "tc",
+            "qdisc",
+            "add",
+            "dev",
+            interface,
+            "root",
+            "netem",
+            "delay",
+            f"{delay_ms}ms",
+        ]
         rc, out = _run_docker(cmd)
         if rc != 0:
             raise RuntimeError(f"Failed to add tc netem delay on {router} {interface}: {out}")
@@ -439,7 +561,9 @@ class HighLatencyScenario(BaseScenario):
         if not router or not interface:
             _, router, interface = self._resolve_target(target)
 
-        logger.info("Restoring HIGH_LATENCY on %s (%s dev %s: tc qdisc del)", target, router, interface)
+        logger.info(
+            "Restoring HIGH_LATENCY on %s (%s dev %s: tc qdisc del)", target, router, interface
+        )
         cmd = ["docker", "exec", router, "tc", "qdisc", "del", "dev", interface, "root"]
         _run_docker(cmd)
 
@@ -449,10 +573,14 @@ class HighLatencyScenario(BaseScenario):
             endpoint = LINK_ENDPOINTS[comp_id]
             r_a = APPROVED_ROUTER_CONTAINERS[endpoint["router_a"]]
             r_b = APPROVED_ROUTER_CONTAINERS[endpoint["router_b"]]
-            return FaultLocation(kind=FaultLocationKind.LINK, component_id=comp_id, affected_routers=[r_a, r_b])
+            return FaultLocation(
+                kind=FaultLocationKind.LINK, component_id=comp_id, affected_routers=[r_a, r_b]
+            )
         else:
             r_name = APPROVED_ROUTER_CONTAINERS[router]
-            return FaultLocation(kind=FaultLocationKind.ROUTER, component_id=r_name, affected_routers=[r_name])
+            return FaultLocation(
+                kind=FaultLocationKind.ROUTER, component_id=r_name, affected_routers=[r_name]
+            )
 
     def get_affected_components(self, target: str) -> list[str]:
         comp_id, router, interface = self._resolve_target(target)
@@ -487,7 +615,10 @@ def get_scenario(scenario_id: str | ScenarioID) -> BaseScenario:
         try:
             scenario_id = ScenarioID(clean_id)
         except ValueError:
-            raise InvalidTargetError(f"Invalid scenario ID '{scenario_id}'. Must be one of {[s.value for s in ScenarioID]}")
+            raise InvalidTargetError(
+                f"Invalid scenario ID '{scenario_id}'. Must be one of "
+                f"{[s.value for s in ScenarioID]}"
+            )
 
     if scenario_id not in SCENARIOS:
         raise InvalidTargetError(f"Scenario '{scenario_id}' is not implemented.")

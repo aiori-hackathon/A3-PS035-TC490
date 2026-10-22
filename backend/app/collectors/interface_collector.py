@@ -33,9 +33,8 @@ class InterfaceCollector(BaseCollector):
     ) -> list[EvidenceRecord]:
         target_routers = self.filter_router_ids(router_ids)
         records: list[EvidenceRecord] = []
-        now = self.now_utc()
-
         for rid in target_routers:
+            now = self.now_utc()
             meta = EXPECTED_ROUTERS_METADATA.get(rid, {})
             expected_ifaces = list(meta.get("interfaces", {}).keys()) or ["eth1", "eth2", "lo"]
 
@@ -49,7 +48,7 @@ class InterfaceCollector(BaseCollector):
                             source_interface=iface,
                             event_type="ROUTER_UNAVAILABLE",
                             observed_at=now,
-                            collected_at=now,
+                            collected_at=self.now_utc(),
                             source_type=EvidenceSourceType.INTERFACE_POLL,
                             collection_method=CollectionMethod.PERIODIC_POLL,
                             collection_status=ObservationStatus.COLLECTION_FAILED,
@@ -77,7 +76,7 @@ class InterfaceCollector(BaseCollector):
                             source_interface=iface,
                             event_type="COMMAND_FAILED",
                             observed_at=now,
-                            collected_at=now,
+                            collected_at=self.now_utc(),
                             source_type=EvidenceSourceType.INTERFACE_POLL,
                             collection_method=CollectionMethod.PERIODIC_POLL,
                             collection_status=ObservationStatus.COLLECTION_FAILED,
@@ -101,7 +100,7 @@ class InterfaceCollector(BaseCollector):
                             source_interface=iface,
                             event_type="PARSE_FAILED",
                             observed_at=now,
-                            collected_at=now,
+                            collected_at=self.now_utc(),
                             source_type=EvidenceSourceType.INTERFACE_POLL,
                             collection_method=CollectionMethod.PERIODIC_POLL,
                             collection_status=ObservationStatus.UNKNOWN,
@@ -129,7 +128,7 @@ class InterfaceCollector(BaseCollector):
                             source_interface=iface,
                             event_type="INTERFACE_NOT_FOUND",
                             observed_at=now,
-                            collected_at=now,
+                            collected_at=self.now_utc(),
                             source_type=EvidenceSourceType.INTERFACE_POLL,
                             collection_method=CollectionMethod.PERIODIC_POLL,
                             collection_status=ObservationStatus.OBSERVED,
@@ -174,7 +173,7 @@ class InterfaceCollector(BaseCollector):
                         source_interface=iface,
                         event_type=event_type,
                         observed_at=now,
-                        collected_at=now,
+                        collected_at=self.now_utc(),
                         source_type=EvidenceSourceType.INTERFACE_POLL,
                         collection_method=CollectionMethod.PERIODIC_POLL,
                         collection_status=ObservationStatus.OBSERVED,

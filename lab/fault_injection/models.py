@@ -7,13 +7,12 @@ Typed schemas and contracts for controlled network fault injection experiments.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
+from app.schemas.hypothesis import FaultLocation, FaultType
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-
-from app.schemas.hypothesis import FaultLocation, FaultLocationKind, FaultType
 
 
 class ScenarioID(str, Enum):
@@ -63,24 +62,44 @@ FORBIDDEN_INTERFACES = {"eth0", "mgmt", "mgmt0", "lo"}
 
 LINK_ENDPOINTS = {
     "L12": {
-        "router_a": "nexora-r1", "interface_a": "eth1", "ip_a": "10.0.12.1",
-        "router_b": "nexora-r2", "interface_b": "eth1", "ip_b": "10.0.12.2",
+        "router_a": "nexora-r1",
+        "interface_a": "eth1",
+        "ip_a": "10.0.12.1",
+        "router_b": "nexora-r2",
+        "interface_b": "eth1",
+        "ip_b": "10.0.12.2",
     },
     "L23": {
-        "router_a": "nexora-r2", "interface_a": "eth2", "ip_a": "10.0.23.1",
-        "router_b": "nexora-r3", "interface_b": "eth1", "ip_b": "10.0.23.2",
+        "router_a": "nexora-r2",
+        "interface_a": "eth2",
+        "ip_a": "10.0.23.1",
+        "router_b": "nexora-r3",
+        "interface_b": "eth1",
+        "ip_b": "10.0.23.2",
     },
     "L34": {
-        "router_a": "nexora-r3", "interface_a": "eth2", "ip_a": "10.0.34.1",
-        "router_b": "nexora-r4", "interface_b": "eth1", "ip_b": "10.0.34.2",
+        "router_a": "nexora-r3",
+        "interface_a": "eth2",
+        "ip_a": "10.0.34.1",
+        "router_b": "nexora-r4",
+        "interface_b": "eth1",
+        "ip_b": "10.0.34.2",
     },
     "L45": {
-        "router_a": "nexora-r4", "interface_a": "eth2", "ip_a": "10.0.45.1",
-        "router_b": "nexora-r5", "interface_b": "eth1", "ip_b": "10.0.45.2",
+        "router_a": "nexora-r4",
+        "interface_a": "eth2",
+        "ip_a": "10.0.45.1",
+        "router_b": "nexora-r5",
+        "interface_b": "eth1",
+        "ip_b": "10.0.45.2",
     },
     "L51": {
-        "router_a": "nexora-r5", "interface_a": "eth2", "ip_a": "10.0.15.1",
-        "router_b": "nexora-r1", "interface_b": "eth2", "ip_b": "10.0.15.2",
+        "router_a": "nexora-r5",
+        "interface_a": "eth2",
+        "ip_a": "10.0.15.1",
+        "router_b": "nexora-r1",
+        "interface_b": "eth2",
+        "ip_b": "10.0.15.2",
     },
 }
 
@@ -97,12 +116,14 @@ class ActiveFaultLock(BaseModel):
     injected_details: dict[str, Any]
     state: ExperimentState
     started_at: datetime
+    injection_command_start: datetime | None = None
+    injection_command_end: datetime | None = None
 
     @field_validator("started_at", mode="before")
     @classmethod
     def validate_utc(cls, v: Any) -> Any:
         if isinstance(v, datetime) and v.tzinfo is None:
-            return v.replace(tzinfo=timezone.utc)
+            return v.replace(tzinfo=UTC)
         return v
 
 
@@ -114,15 +135,15 @@ class NetworkObservation(BaseModel):
     timestamp: datetime
     container_health: dict[str, bool]
     ospf_neighbors: dict[str, dict[str, str]]  # container -> {neighbor_rid: state}
-    ospf_routes_count: dict[str, int]          # container -> route count
-    loopback_pings: dict[str, bool]            # "r1->r2" -> reachable
+    ospf_routes_count: dict[str, int]  # container -> route count
+    loopback_pings: dict[str, bool]  # "r1->r2" -> reachable
     probe_metrics: dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("timestamp", mode="before")
     @classmethod
     def validate_utc(cls, v: Any) -> Any:
         if isinstance(v, datetime) and v.tzinfo is None:
-            return v.replace(tzinfo=timezone.utc)
+            return v.replace(tzinfo=UTC)
         return v
 
 
@@ -150,7 +171,7 @@ class ExperimentRecord(BaseModel):
     @classmethod
     def validate_utc(cls, v: Any) -> Any:
         if isinstance(v, datetime) and v.tzinfo is None:
-            return v.replace(tzinfo=timezone.utc)
+            return v.replace(tzinfo=UTC)
         return v
 
     @field_validator("observation_timestamps", mode="before")
@@ -160,7 +181,7 @@ class ExperimentRecord(BaseModel):
             res = []
             for item in v:
                 if isinstance(item, datetime) and item.tzinfo is None:
-                    res.append(item.replace(tzinfo=timezone.utc))
+                    res.append(item.replace(tzinfo=UTC))
                 else:
                     res.append(item)
             return res

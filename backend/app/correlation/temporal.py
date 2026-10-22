@@ -31,6 +31,7 @@ Window Defaults (chosen conservatively for a 40-second OSPF dead timer lab):
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 
@@ -215,17 +216,12 @@ class TemporalCorrelator:
 
     def deduplicate(self, records: list[EvidenceRecord]) -> tuple[list[EvidenceRecord], int]:
         """
-        Remove exact duplicate evidence records.
+        Remove repeated observations with identical semantic payloads in a jitter bucket.
 
-        Two records are considered duplicates if they share the same:
-        - source_router
-        - source_type
-        - event_type
-        - source_interface
-        - observed_at (within POLLING_JITTER_SECONDS)
-
-        Note: evidence_id is globally unique, so records are never identical
-        by ID. This deduplication handles logical duplicates from repeated polls.
+        Targets, prefixes, neighbour identities, collection status and measured values
+        are part of the key. Provenance IDs and collection timestamps are not. Distinct
+        states must survive so downstream diagnosis can inspect contradictions. Buckets
+        bound co-incident polling; they do not imply exact event-order precision.
 
         Returns
         -------
@@ -236,7 +232,12 @@ class TemporalCorrelator:
         unique: list[EvidenceRecord] = []
         duplicates_removed = 0
 
-        for rec in records:
+        # Canonical ordering makes representative selection independent of input order.
+        ordered = sorted(records, key=lambda rec: (
+            self.extract_timestamp(rec) or datetime.min.replace(tzinfo=UTC),
+            rec.evidence_id,
+        ))
+        for rec in ordered:
             ts = self.extract_timestamp(rec)
             # Round timestamp to nearest jitter bucket
             if ts is not None:
@@ -244,13 +245,10 @@ class TemporalCorrelator:
             else:
                 bucket = -1  # Unknown timestamp bucket
 
-            key = (
-                rec.source_router,
-                rec.source_type.value,
-                rec.event_type,
-                rec.source_interface or "",
-                bucket,
-            )
+            payload = rec.model_dump(mode="json", exclude={
+                "evidence_id", "observed_at", "collected_at", "raw_reference", "incident_id",
+            })
+            key = (type(rec).__name__, json.dumps(payload, sort_keys=True), bucket)
             if key in seen:
                 duplicates_removed += 1
             else:

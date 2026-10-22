@@ -14,11 +14,12 @@ import os
 import subprocess
 import time
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from app.evaluation.ground_truth import FaultInjectionRecord
+
 from lab.fault_injection.models import (
     APPROVED_DATA_INTERFACES,
     APPROVED_LINKS,
@@ -33,8 +34,6 @@ from lab.fault_injection.models import (
     ScenarioID,
 )
 from lab.fault_injection.scenarios import (
-    BaseScenario,
-    InvalidTargetError,
     SecurityViolationError,
     get_scenario,
 )
@@ -109,16 +108,28 @@ class FaultController:
             return ActiveFaultLock.model_validate(data)
         except Exception as e:
             logger.warning("Corrupted active fault lock file found (%s). Treating as active.", e)
-            return None
+            raise ExperimentAlreadyActiveError(
+                "Unreadable active fault lock; manual review required"
+            ) from e
 
     def _acquire_lock(self, lock: ActiveFaultLock) -> None:
-        active = self.get_active_fault()
-        if active:
+        try:
+            with self.lock_file.open("x", encoding="utf-8") as stream:
+                stream.write(lock.model_dump_json(indent=2))
+                stream.flush()
+                os.fsync(stream.fileno())
+        except FileExistsError as exc:
             raise ExperimentAlreadyActiveError(
-                f"Experiment '{active.run_id}' ({active.scenario_id.value} on {active.target}) is already active! "
-                f"Reset it first with 'reset' or 'emergency-reset'."
-            )
-        self.lock_file.write_text(lock.model_dump_json(indent=2))
+                "An experiment is already active; reset it first"
+            ) from exc
+
+    def _update_lock(self, lock: ActiveFaultLock) -> None:
+        temporary = self.lock_file.with_suffix(".tmp")
+        with temporary.open("w", encoding="utf-8") as stream:
+            stream.write(lock.model_dump_json(indent=2))
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, self.lock_file)
 
     def _release_lock(self) -> None:
         if self.lock_file.exists():
@@ -154,11 +165,18 @@ class FaultController:
                 data = json.loads(out)
                 nbrs = data.get("neighbors", {})
                 full_nbrs = [
-                    rid for rid, entries in nbrs.items()
-                    if any(e.get("converged") == "Full" or "Full" in e.get("state", "") for e in entries)
+                    rid
+                    for rid, entries in nbrs.items()
+                    if any(
+                        e.get("converged") == "Full" or "Full" in e.get("state", "")
+                        for e in entries
+                    )
                 ]
                 if len(full_nbrs) != 2:
-                    issues.append(f"{c}: expected exactly 2 FULL adjacencies, found {len(full_nbrs)}: {full_nbrs}")
+                    issues.append(
+                        f"{c}: expected exactly 2 FULL adjacencies, "
+                        f"found {len(full_nbrs)}: {full_nbrs}"
+                    )
             except Exception as e:
                 issues.append(f"{c}: json parse error on ospf neighbors: {e}")
 
@@ -217,10 +235,10 @@ class FaultController:
                     continue
                 pair_key = f"{src}->{dst}"
                 rc, _ = _docker_exec(src, f"ping -c 1 -W 2 {dst_ip} >/dev/null 2>&1")
-                loopback_pings[pair_key] = (rc == 0)
+                loopback_pings[pair_key] = rc == 0
 
         return NetworkObservation(
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             container_health=health,
             ospf_neighbors=ospf_neighbors,
             ospf_routes_count=ospf_routes_count,
@@ -255,7 +273,10 @@ class FaultController:
                 "scenario_id": ScenarioID.F3_OSPF_CONFIG_MISMATCH.value,
                 "name": "OSPF Configuration Mismatch",
                 "fault_type": "OSPF_CONFIGURATION_MISMATCH",
-                "description": "Apply temporary incompatible OSPF hello/dead timer parameter on an approved link.",
+                "description": (
+                    "Apply temporary incompatible OSPF hello/dead timer parameter "
+                    "on an approved link."
+                ),
                 "allowed_targets": sorted(APPROVED_LINKS),
                 "default_target": "L12",
                 "parameters": {"hello_interval": 5, "dead_interval": 15},
@@ -288,6 +309,7 @@ class FaultController:
         self,
         scenario_id: str | ScenarioID,
         target: str | None = None,
+        run_id: str | None = None,
         **params: Any,
     ) -> ActiveFaultLock:
         """Inject a fault after verifying pre-conditions and acquiring the lock."""
@@ -300,58 +322,85 @@ class FaultController:
         # Validate target
         scenario.validate_target(target, **params)
 
-        # Baseline readiness check
-        healthy, issues = self.check_baseline()
-        if not healthy:
-            raise BaselineNotHealthyError(f"Cannot inject fault — lab baseline is not healthy: {issues}")
-
-        run_id = f"exp-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}-{uuid.uuid4().hex[:6]}"
-
-        # Attempt injection
-        injected_details = scenario.inject(target, **params)
-
+        run_id = run_id or f"exp-{uuid.uuid4().hex}"
         lock = ActiveFaultLock(
             run_id=run_id,
             scenario_id=scenario.scenario_id,
             fault_type=scenario.fault_type,
             target=target,
-            injected_details=injected_details,
-            state=ExperimentState.ACTIVE,
-            started_at=datetime.now(timezone.utc),
+            injected_details={},
+            state=ExperimentState.PRE_VALIDATING,
+            started_at=datetime.now(UTC),
         )
+        # Reserve BEFORE baseline checks or any mutation; O_EXCL prevents races.
         self._acquire_lock(lock)
-        logger.info("Fault injected successfully: %s", lock)
+        try:
+            healthy, issues = self.check_baseline()
+            if not healthy:
+                raise BaselineNotHealthyError(f"Cannot inject fault: {issues}")
+        except BaseException:
+            self._release_lock()  # No mutation has been attempted yet.
+            raise
+        lock.injection_command_start = datetime.now(UTC)
+        self._update_lock(lock)
+        # On partial injection/error, keep the pending lock so reset can recover
+        # using the validated target and scenario defaults. Never hide uncertainty.
+        lock.injected_details = scenario.inject(target, **params)
+        lock.injection_command_end = datetime.now(UTC)
+        lock.started_at = lock.injection_command_end
+        lock.state = ExperimentState.ACTIVE
+        self._update_lock(lock)
         return lock
 
-    def reset_fault(self) -> None:
-        """Restore the currently active fault and verify recovery."""
+    def reset_fault(self, expected_run_id: str | None = None, verify: bool = True) -> None:
+        """Restore the owned fault; retain lock until recovery is positively confirmed."""
         active = self.get_active_fault()
         if not active:
-            logger.info("No active fault found to reset.")
             return
-
+        if expected_run_id is not None and active.run_id != expected_run_id:
+            raise ExperimentAlreadyActiveError("Run ID mismatch; refusing to reset another run")
         scenario = get_scenario(active.scenario_id)
-        logger.info("Reversing active fault: %s on %s", active.scenario_id.value, active.target)
-        try:
-            scenario.restore(active.target, active.injected_details)
-        finally:
-            self._release_lock()
-
-        # Poll for OSPF re-convergence up to 60s
-        logger.info("Waiting for OSPF re-convergence post-reset (up to 60s)...")
-        recovered = False
-        last_issues: list[str] = []
-        for attempt in range(12):
+        scenario.validate_target(active.target)
+        # A corrupted recovery record must never redirect restoration outside NEXORA.
+        details = active.injected_details
+        for key in ("router", "container"):
+            if key in details and details[key] not in APPROVED_ROUTER_CONTAINERS:
+                raise SecurityViolationError("Unapproved restoration container")
+        if "interface" in details and details["interface"] not in APPROVED_DATA_INTERFACES:
+            raise SecurityViolationError("Unapproved restoration interface")
+        if active.target.upper() in LINK_ENDPOINTS:
+            endpoint = LINK_ENDPOINTS[active.target.upper()]
+            if details.get("router", endpoint["router_a"]) != endpoint["router_a"] or (
+                details.get("interface", endpoint["interface_a"]) != endpoint["interface_a"]
+            ):
+                raise SecurityViolationError("Restoration endpoint does not match approved target")
+        elif details.get("container", "nexora-" + active.target.lower()) != (
+            "nexora-" + active.target.lower()
+        ):
+            raise SecurityViolationError("Restoration container does not match approved target")
+        active.state = ExperimentState.RESTORING
+        self._update_lock(active)
+        scenario.restore(active.target, details)
+        if not verify:
+            return  # Capture runner records reset end, then verifies separately.
+        for _ in range(12):
             time.sleep(5)
-            recovered, last_issues = self.check_baseline()
-            if recovered:
-                logger.info("Baseline re-convergence verified after %ds!", (attempt + 1) * 5)
-                break
+            healthy, _ = self.check_baseline()
+            if healthy:
+                self.complete_recovery(active.run_id)
+                return
+        raise BaselineNotHealthyError("Baseline restoration unverified; active lock retained")
 
-        if not recovered:
-            logger.warning("Baseline not fully restored post-reset: %s", last_issues)
-        else:
-            logger.info("Lab successfully restored to healthy baseline.")
+    def complete_recovery(self, run_id: str) -> None:
+        """Release only this run's lock after the caller's successful recovery checks."""
+        active = self.get_active_fault()
+        if active is None or active.run_id != run_id:
+            raise ExperimentAlreadyActiveError("Run ID mismatch at recovery completion")
+        if active.state != ExperimentState.RESTORING:
+            raise RuntimeError("Cannot complete recovery before reset")
+        self._release_lock()
+        if self.lock_file.exists():
+            raise RuntimeError("Recovery lock could not be released; sequence must stop")
 
     def emergency_reset(self) -> list[str]:
         """Idempotently reset all routers and interfaces to normal, then verify."""
@@ -381,8 +430,11 @@ class FaultController:
             _docker_exec(
                 c,
                 "vtysh -c 'configure terminal' "
-                "-c 'interface eth1' -c 'ip ospf hello-interval 10' -c 'ip ospf dead-interval 40' -c 'ip ospf network point-to-point' "
-                "-c 'interface eth2' -c 'ip ospf hello-interval 10' -c 'ip ospf dead-interval 40' -c 'ip ospf network point-to-point' 2>/dev/null || true",
+                "-c 'interface eth1' -c 'ip ospf hello-interval 10' "
+                "-c 'ip ospf dead-interval 40' -c 'ip ospf network point-to-point' "
+                "-c 'interface eth2' -c 'ip ospf hello-interval 10' "
+                "-c 'ip ospf dead-interval 40' "
+                "-c 'ip ospf network point-to-point' 2>/dev/null || true",
             )
             actions.append(f"Restored OSPF config on {c}")
 
@@ -439,7 +491,7 @@ class FaultController:
         try:
             # Hold fault state and gather active-state observations
             time.sleep(hold_sec)
-            observation_times.append(datetime.now(timezone.utc))
+            observation_times.append(datetime.now(UTC))
 
             # Additional probe metrics if packet loss or high latency
             extra_probes: dict[str, Any] = {}
@@ -459,7 +511,7 @@ class FaultController:
         finally:
             # 3. Always restore
             self.reset_fault()
-            recovery_time = datetime.now(timezone.utc)
+            recovery_time = datetime.now(UTC)
 
         # 4. Restoration observation
         restoration_obs = self.observe_network()

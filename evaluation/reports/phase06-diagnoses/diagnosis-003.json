@@ -1,0 +1,129 @@
+{
+  "diagnoses": [
+    {
+      "diagnosed_at": "2026-10-20T08:44:33.635837Z",
+      "engine_version": "phase06-rules-v1.1",
+      "evidence_certificate": {
+        "certificate_id": "cert-4fde2f2c4ebe449d8b664bc1090d5a3c",
+        "collection_coverage_pct": 80.0,
+        "contradictory_evidence_count": 1,
+        "evidence_sufficiency_met": true,
+        "generated_at": "2026-10-20T08:44:33.635842Z",
+        "incident_id": "incident-36ae1e34674d1017",
+        "missing_evidence_descriptions": [
+          "Observed OSPF area/hello/dead/authentication parameters to confirm mismatch; UP plus adjacency loss is a heuristic explanation, not parameter verification."
+        ],
+        "reasoning_summary": "DIAGNOSED. Leading candidate OSPF_CONFIGURATION_MISMATCH at L23, heuristic score 0.70. +0.40: Non-FULL OSPF adjacency on this topology link. Evidence: [ev-ospf-r2-1792436672457-24ec6b-3-3-3-3]. +0.40: Physical state family: UP endpoints distinguish protocol from link fault. Evidence: [ev-interface-r2-1792436672059-c958e5-eth2, ev-interface-r3-1792436672119-e12407-eth1]. -0.10: FULL observation conflicts with persistent adjacency mismatch. Evidence: [ev-ospf-r3-1792436672560-ebea07-2-2-2-2]. Scores are heuristic alignment values, not calibrated probabilities.",
+        "score_interpretation": "Rule scores are dimensionless heuristic values in [0.0, 1.0] produced by deterministic rules. They are NOT calibrated statistical probabilities.",
+        "supporting_evidence_count": 3,
+        "total_evidence_count": 101
+      },
+      "incident_id": "incident-36ae1e34674d1017",
+      "missing_information": [
+        "Observed OSPF area/hello/dead/authentication parameters to confirm mismatch; UP plus adjacency loss is a heuristic explanation, not parameter verification."
+      ],
+      "ranked_hypotheses": [
+        {
+          "hypothesis": {
+            "contradictory_evidence_ids": [
+              "ev-ospf-r3-1792436672560-ebea07-2-2-2-2"
+            ],
+            "counterfactual_verified": null,
+            "fault_location": {
+              "affected_routers": [
+                "R2",
+                "R3"
+              ],
+              "component_id": "L23",
+              "kind": "LINK"
+            },
+            "fault_type": "OSPF_CONFIGURATION_MISMATCH",
+            "hypothesis_id": "h-ospf_configuration_mismatch-l23",
+            "incident_id": "incident-36ae1e34674d1017",
+            "missing_evidence_descriptions": [
+              "Observed OSPF area/hello/dead/authentication parameters to confirm mismatch; UP plus adjacency loss is a heuristic explanation, not parameter verification."
+            ],
+            "reasoning_trace": [
+              "+0.40: Non-FULL OSPF adjacency on this topology link. Evidence: [ev-ospf-r2-1792436672457-24ec6b-3-3-3-3].",
+              "+0.40: Physical state family: UP endpoints distinguish protocol from link fault. Evidence: [ev-interface-r2-1792436672059-c958e5-eth2, ev-interface-r3-1792436672119-e12407-eth1].",
+              "-0.10: FULL observation conflicts with persistent adjacency mismatch. Evidence: [ev-ospf-r3-1792436672560-ebea07-2-2-2-2]."
+            ],
+            "rule_score": 0.7,
+            "supporting_evidence_ids": [
+              "ev-interface-r2-1792436672059-c958e5-eth2",
+              "ev-interface-r3-1792436672119-e12407-eth1",
+              "ev-ospf-r2-1792436672457-24ec6b-3-3-3-3"
+            ]
+          },
+          "rank": 1
+        }
+      ],
+      "result_id": "dr-17d1f4dd34d6455986c5184ab1f01346",
+      "status": "DIAGNOSED",
+      "top1_hypothesis": {
+        "contradictory_evidence_ids": [
+          "ev-ospf-r3-1792436672560-ebea07-2-2-2-2"
+        ],
+        "counterfactual_verified": null,
+        "fault_location": {
+          "affected_routers": [
+            "R2",
+            "R3"
+          ],
+          "component_id": "L23",
+          "kind": "LINK"
+        },
+        "fault_type": "OSPF_CONFIGURATION_MISMATCH",
+        "hypothesis_id": "h-ospf_configuration_mismatch-l23",
+        "incident_id": "incident-36ae1e34674d1017",
+        "missing_evidence_descriptions": [
+          "Observed OSPF area/hello/dead/authentication parameters to confirm mismatch; UP plus adjacency loss is a heuristic explanation, not parameter verification."
+        ],
+        "reasoning_trace": [
+          "+0.40: Non-FULL OSPF adjacency on this topology link. Evidence: [ev-ospf-r2-1792436672457-24ec6b-3-3-3-3].",
+          "+0.40: Physical state family: UP endpoints distinguish protocol from link fault. Evidence: [ev-interface-r2-1792436672059-c958e5-eth2, ev-interface-r3-1792436672119-e12407-eth1].",
+          "-0.10: FULL observation conflicts with persistent adjacency mismatch. Evidence: [ev-ospf-r3-1792436672560-ebea07-2-2-2-2]."
+        ],
+        "rule_score": 0.7,
+        "supporting_evidence_ids": [
+          "ev-interface-r2-1792436672059-c958e5-eth2",
+          "ev-interface-r3-1792436672119-e12407-eth1",
+          "ev-ospf-r2-1792436672457-24ec6b-3-3-3-3"
+        ]
+      },
+      "top3_hypotheses": [
+        {
+          "contradictory_evidence_ids": [
+            "ev-ospf-r3-1792436672560-ebea07-2-2-2-2"
+          ],
+          "counterfactual_verified": null,
+          "fault_location": {
+            "affected_routers": [
+              "R2",
+              "R3"
+            ],
+            "component_id": "L23",
+            "kind": "LINK"
+          },
+          "fault_type": "OSPF_CONFIGURATION_MISMATCH",
+          "hypothesis_id": "h-ospf_configuration_mismatch-l23",
+          "incident_id": "incident-36ae1e34674d1017",
+          "missing_evidence_descriptions": [
+            "Observed OSPF area/hello/dead/authentication parameters to confirm mismatch; UP plus adjacency loss is a heuristic explanation, not parameter verification."
+          ],
+          "reasoning_trace": [
+            "+0.40: Non-FULL OSPF adjacency on this topology link. Evidence: [ev-ospf-r2-1792436672457-24ec6b-3-3-3-3].",
+            "+0.40: Physical state family: UP endpoints distinguish protocol from link fault. Evidence: [ev-interface-r2-1792436672059-c958e5-eth2, ev-interface-r3-1792436672119-e12407-eth1].",
+            "-0.10: FULL observation conflicts with persistent adjacency mismatch. Evidence: [ev-ospf-r3-1792436672560-ebea07-2-2-2-2]."
+          ],
+          "rule_score": 0.7,
+          "supporting_evidence_ids": [
+            "ev-interface-r2-1792436672059-c958e5-eth2",
+            "ev-interface-r3-1792436672119-e12407-eth1",
+            "ev-ospf-r2-1792436672457-24ec6b-3-3-3-3"
+          ]
+        }
+      ]
+    }
+  ]
+}
