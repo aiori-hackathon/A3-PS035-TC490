@@ -198,14 +198,14 @@ class CaptureRunner:
 
         checkpoint()
         try:
-            with self.deadline(60):
+            with self.deadline(60, "preflight baseline"):
                 if not self.observer.healthy():
                     raise RuntimeError("Healthy NEXORA baseline was not verified")
             report["baseline_verified_at"] = self.now().isoformat()
             self.observer.begin(plan)
             # Reserve 60 of the 180 seconds for reset commands. Recovery checks
             # happen after reset; a failed reset cannot guarantee fault removal.
-            with self.deadline(120):
+            with self.deadline(120, "120s active-work budget"):
                 active_started = self.monotonic()
                 # Controller separately timestamps the exact scenario-command call,
                 # after its own baseline check and atomic reservation.
@@ -224,10 +224,10 @@ class CaptureRunner:
                 checkpoint()
                 # Capture window includes manifestation observations reused by final
                 # collection, so the SAME 90-second budget covers both phases.
-                with self.deadline(90):
+                with self.deadline(90, "90s collection budget"):
                     capture_started = self.monotonic()
                     report["collection_start"] = self.now().isoformat()
-                    with self.deadline(60):
+                    with self.deadline(60, "60s manifestation budget"):
                         while not self.observer.manifested(plan):
                             if self.monotonic() - capture_started >= 60:
                                 raise CaptureTimeout("Fault never manifested within 60 seconds")
@@ -274,10 +274,10 @@ class CaptureRunner:
                     # Do not perform artifact I/O before reset: a blocked journal
                     # must not consume the cleanup reserve. The controller persists
                     # its RESTORING state as part of the bounded reset operation.
-                    with self.deadline(60):
+                    with self.deadline(60, "60s reset budget"):
                         self.controller.reset_fault(expected_run_id=run_id, verify=False)
                     report["reset_ended_at"] = self.now().isoformat()
-                    with self.deadline(60):
+                    with self.deadline(60, "60s recovery verification"):
                         recovery_start = self.monotonic()
                         while not self.observer.healthy():
                             if self.monotonic() - recovery_start >= 60:

@@ -74,6 +74,7 @@ class PingCollector(BaseCollector):
         timeout_s: int = 1,
         incident_id: str | None = None,
         source_address: str | None = None,
+        interval_s: float | None = None,
     ) -> PingMeasurement | PingAttemptFailure:
         """Execute a single bounded ping probe and return a PingMeasurement record."""
         src = source_router.upper()
@@ -131,10 +132,16 @@ class PingCollector(BaseCollector):
             target_address,
         ]
 
+        if interval_s is not None:
+            bounded_interval = max(0.1, min(float(interval_s), 10.0))
+            cmd[-1:-1] = ["-i", str(bounded_interval)]
+            total_timeout = float(bounded_count * bounded_interval + bounded_timeout + 3.0)
+        else:
+            total_timeout = float(bounded_count * bounded_timeout + 3.0)
+
         if source_address is not None:
             cmd[-1:-1] = ["-I", source_address]
 
-        total_timeout = float(bounded_count * bounded_timeout + 3.0)
         code, stdout, stderr = self.transport.execute(src, cmd, timeout=total_timeout)
         combined_output = f"{stdout}\n{stderr}"
 

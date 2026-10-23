@@ -192,6 +192,7 @@ class LabObserver:
                         count=plan.packet_count,
                         timeout_s=1,
                         source_address=endpoint[f"ip_{source}"],
+                        interval_s=0.2,
                     )
                 )
         self.rounds += 1
@@ -220,9 +221,11 @@ class LabObserver:
             and r.adjacency_state.lower() not in {"full", "unknown"}
         ]
         if plan.scenario_id == "F2_ROUTER_FAILURE":
-            expected = f"{plan.target[1:]}." * 3 + plan.target[1:]
+            target_clean = plan.target.strip().upper()
+            router_num = target_clean.lstrip("R")
+            expected = f"{router_num}.{router_num}.{router_num}.{router_num}"
             return (
-                not self.transport.is_router_running(plan.target)
+                not self.transport.is_router_running(target_clean)
                 and len({r.source_router for r in lost if r.neighbour_router_id == expected}) == 2
             )
         endpoint = LINK_ENDPOINTS[plan.target]

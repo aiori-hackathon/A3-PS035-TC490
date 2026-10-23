@@ -20,8 +20,9 @@ class CaptureInterrupted(BaseException):
 
 
 class Deadline:
-    def __init__(self, seconds: float):
+    def __init__(self, seconds: float, description: str = ""):
         self.seconds = seconds
+        self.description = description
 
     def __enter__(self):
         if threading.current_thread() is not threading.main_thread() or not hasattr(
@@ -40,9 +41,9 @@ class Deadline:
         )
         return self
 
-    @staticmethod
-    def _expired(signum, frame):
-        raise CaptureTimeout("Bounded capture deadline expired")
+    def _expired(self, signum, frame):
+        desc = f" ({self.description})" if self.description else f" ({self.seconds}s)"
+        raise CaptureTimeout(f"Bounded capture deadline expired{desc}")
 
     def __exit__(self, exc_type, exc_value, traceback):
         signal.setitimer(signal.ITIMER_REAL, 0)
@@ -52,7 +53,8 @@ class Deadline:
             if remaining > 0:
                 signal.setitimer(signal.ITIMER_REAL, remaining, self.previous_timer[1])
             elif exc_type is None:
-                raise CaptureTimeout("Outer capture deadline expired")
+                desc = f" ({self.description})" if self.description else f" ({self.seconds}s)"
+                raise CaptureTimeout(f"Outer capture deadline expired{desc}")
 
 
 def write_json(path: Path, value: dict) -> None:
