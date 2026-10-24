@@ -4,7 +4,15 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.diagnosis import router as diagnosis_router
+from app.api.evidence import router as evidence_router
 from app.api.health import router as health_router
+from app.api.incidents import router as incidents_router
+from app.api.probes import router as probes_router
+from app.api.readiness import router as readiness_router
+from app.api.snapshots import router as snapshots_router
+from app.api.topology import router as topology_router
+from app.api.verification import router as verification_router
 from app.core.config import get_settings
 
 
@@ -36,9 +44,20 @@ def create_application() -> FastAPI:
         allow_headers=["*"],
     )
 
-    # Health check routes
+    # Health & Readiness root routes
     app.include_router(health_router)
+    app.include_router(readiness_router)
+
+    # Versioned API routes (/api/v1)
     app.include_router(health_router, prefix=settings.API_V1_PREFIX)
+    app.include_router(readiness_router, prefix=settings.API_V1_PREFIX)
+    app.include_router(topology_router, prefix=settings.API_V1_PREFIX)
+    app.include_router(snapshots_router, prefix=settings.API_V1_PREFIX)
+    app.include_router(incidents_router, prefix=settings.API_V1_PREFIX)
+    app.include_router(diagnosis_router, prefix=settings.API_V1_PREFIX)
+    app.include_router(verification_router, prefix=settings.API_V1_PREFIX)
+    app.include_router(probes_router, prefix=settings.API_V1_PREFIX)
+    app.include_router(evidence_router, prefix=settings.API_V1_PREFIX)
 
     return app
 
