@@ -35,7 +35,7 @@ const navItems: NavItem[] = [
     id: "overview",
     name: "Operations Center",
     icon: Activity,
-    badge: "Live Hub",
+    badge: "Operations Hub",
   },
   {
     id: "topology",

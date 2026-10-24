@@ -10,6 +10,7 @@ import {
   ShieldAlert,
   Lock,
   Activity,
+  AlertCircle,
 } from "lucide-react";
 
 interface SafeProbePlannerProps {
@@ -19,7 +20,7 @@ interface SafeProbePlannerProps {
 
 export function SafeProbePlanner({
   probePlan,
-  scenarioKey = "F1",
+  scenarioKey = "F1_LINK_FAILURE",
 }: SafeProbePlannerProps) {
   return (
     <div className="space-y-6">
@@ -33,17 +34,20 @@ export function SafeProbePlanner({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base font-semibold text-white tracking-tight">
-                  Bounded Safe Diagnostic Probe Planner
+                  Provisional Diagnostic Probe Planner
                 </h2>
                 <Badge variant="warning" className="text-[10px] py-0 px-1.5 font-mono">
-                  READ-ONLY GUARDED
+                  PROVISIONAL PREVIEW
                 </Badge>
-                <Badge variant="outline" className="text-[10px] py-0 px-1.5 font-mono border-amber-500/30 text-amber-300">
+                <Badge
+                  variant="outline"
+                  className="text-[10px] py-0 px-1.5 font-mono border-amber-500/30 text-amber-300"
+                >
                   {scenarioKey.toUpperCase()}
                 </Badge>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                Strict safety protocol: Active probe recommendations are presented in preview mode only.
+                Provisional candidate probes derived from counterfactual verifier expectations.
               </p>
             </div>
           </div>
@@ -54,6 +58,22 @@ export function SafeProbePlanner({
           >
             Execution Permission: DISABLED
           </Badge>
+        </div>
+
+        {/* Phase 08 Planner Contract Notice */}
+        <div className="p-3 rounded-lg bg-slate-950/80 border border-amber-500/20 text-xs font-mono text-amber-300/90 flex items-start gap-2.5">
+          <AlertCircle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <p className="font-semibold text-white">
+              Phase 08 Deterministic Probe Planner Integration Status:
+            </p>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              MacBook 1 (Track A) owns the Phase 08 deterministic probe planner and execution
+              daemon. Information-gain calculations, entropy-reduction estimates, and active
+              dispatch tokens are not fabricated by this console and are marked unavailable.
+              Execution is strictly blocked until Track A delivers the authorized backend contract.
+            </p>
+          </div>
         </div>
 
         {/* Safety Guarantees Notice */}
@@ -73,7 +93,7 @@ export function SafeProbePlanner({
           <div className="p-2.5 rounded bg-slate-950/60 border border-slate-800 flex items-start gap-2">
             <ShieldAlert className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
             <span className="text-slate-300">
-              Human-in-the-Loop Required: Real execution blocked until authorized backend controller exists.
+              Execution Guard: Dispatch path disabled; no ping or traceroute issued from frontend.
             </span>
           </div>
         </div>
@@ -86,11 +106,11 @@ export function SafeProbePlanner({
             <div className="flex items-center gap-2">
               <Radar className="h-4 w-4 text-cyan-400" />
               <CardTitle className="text-sm font-semibold text-white">
-                Recommended Next Probes (Plan Preview)
+                Provisional Candidate Probes (Read-Only Preview)
               </CardTitle>
             </div>
             <Badge variant="outline" className="font-mono text-xs">
-              {probePlan?.recommendations.length || 0} Actions Planned
+              {probePlan?.recommendations.length || 0} Probes In Plan
             </Badge>
           </div>
         </CardHeader>
@@ -105,7 +125,8 @@ export function SafeProbePlanner({
                   <th className="py-3 px-3">Source Node</th>
                   <th className="py-3 px-3">Target Endpoint</th>
                   <th className="py-3 px-3">Timeout</th>
-                  <th className="py-3 px-3">Selection Reason & Expected Gain</th>
+                  <th className="py-3 px-3">Selection Rationale</th>
+                  <th className="py-3 px-3">Information Gain</th>
                   <th className="py-3 px-3 text-right">State</th>
                 </tr>
               </thead>
@@ -134,9 +155,20 @@ export function SafeProbePlanner({
                     <td className="py-3 px-3 text-slate-300 text-[11px] leading-relaxed max-w-sm">
                       {probe.selection_reason}
                     </td>
+                    <td className="py-3 px-3">
+                      <Badge
+                        variant="secondary"
+                        className="text-[10px] text-slate-400 bg-slate-950 border border-slate-800"
+                      >
+                        UNAVAILABLE (PHASE 08)
+                      </Badge>
+                    </td>
                     <td className="py-3 px-3 text-right">
-                      <Badge variant="secondary" className="text-[10px] py-0 px-1.5 font-mono">
-                        PLANNED (READ-ONLY)
+                      <Badge
+                        variant="secondary"
+                        className="text-[10px] py-0 px-1.5 font-mono text-amber-300 bg-amber-950/30 border border-amber-500/20"
+                      >
+                        PROVISIONAL (READ-ONLY)
                       </Badge>
                     </td>
                   </tr>

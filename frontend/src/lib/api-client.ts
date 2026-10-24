@@ -107,11 +107,16 @@ export interface SnapshotSummary {
   scenario_key: string;
   name: string;
   description: string;
-  captured_at: string;
+  category?: "CERTIFIED_LIVE_EXPERIMENT" | "BENCHMARK_EVALUATION";
+  availability?: "AVAILABLE" | "UNAVAILABLE_PENDING_CAPTURE";
+  certified_fault_id?: string | null;
+  target_component?: string | null;
+  captured_at: string | null;
   record_count: number;
   incident_ids: string[];
   data_source: string;
   is_live: boolean;
+  unavailable_reason?: string | null;
 }
 
 export interface IncidentSummary {
@@ -124,6 +129,8 @@ export interface IncidentSummary {
   correlation_window_start: string;
   correlation_window_end: string | null;
   correlation_explanation: string;
+  score_label?: string;
+  score_interpretation?: string;
   data_source: string;
   is_live: boolean;
 }
@@ -232,10 +239,16 @@ export interface VerificationReport {
 
 export interface SafeProbePlan {
   incident_id: string;
+  status: "PROVISIONAL" | "ACTIVE" | "COMPLETED";
   recommendations: ProbeRequest[];
+  information_gain: string;
+  entropy_reduction_bits: number | null;
+  planner_source: string;
   safety_guardrail: string;
   execution_permitted: boolean;
+  execution_blocked_reason: string;
   notes: string[];
+  data_source?: string;
 }
 
 export interface EvidenceRecord {
@@ -392,11 +405,106 @@ export const CANONICAL_LINKS: NetworkLinkInfo[] = [
 ];
 
 export const DEMO_SCENARIOS: SnapshotSummary[] = [
+  // 1. Certified Live Experiments
+  {
+    snapshot_id: "obs-snap-20261021T113754Z-520097",
+    scenario_key: "F1_LINK_FAILURE",
+    name: "F1: Link Failure (Certified Live Run)",
+    description:
+      "Certified live FRRouting experiment on link L12. Verified contemporaneous capture binding from Phase 06.4.",
+    category: "CERTIFIED_LIVE_EXPERIMENT",
+    availability: "AVAILABLE",
+    certified_fault_id: "F1_LINK_FAILURE",
+    target_component: "L12",
+    captured_at: "2026-10-21T11:39:18Z",
+    record_count: 103,
+    incident_ids: ["incident-f1-live-l12"],
+    data_source: "CERTIFIED_LIVE_RUN",
+    is_live: false,
+    unavailable_reason: null,
+  },
+  {
+    snapshot_id: "snap-f2_router_failure",
+    scenario_key: "F2_ROUTER_FAILURE",
+    name: "F2: Router Failure (Certified Live Experiment)",
+    description:
+      "Target: Router R3 node outage. Certified live containerlab execution pending from Track A.",
+    category: "CERTIFIED_LIVE_EXPERIMENT",
+    availability: "UNAVAILABLE_PENDING_CAPTURE",
+    certified_fault_id: "F2_ROUTER_FAILURE",
+    target_component: "R3",
+    captured_at: null,
+    record_count: 0,
+    incident_ids: [],
+    data_source: "PENDING_TRACK_A_CAPTURE",
+    is_live: false,
+    unavailable_reason:
+      "Live FRRouting capture not yet completed by Track A on MacBook 1. Telemetry unavailable.",
+  },
+  {
+    snapshot_id: "snap-f3_ospf_config_mismatch",
+    scenario_key: "F3_OSPF_CONFIG_MISMATCH",
+    name: "F3: OSPF Config Mismatch (Certified Live Experiment)",
+    description:
+      "Target: Link L12 hello/dead timer mismatch. Certified live containerlab execution pending from Track A.",
+    category: "CERTIFIED_LIVE_EXPERIMENT",
+    availability: "UNAVAILABLE_PENDING_CAPTURE",
+    certified_fault_id: "F3_OSPF_CONFIG_MISMATCH",
+    target_component: "L12",
+    captured_at: null,
+    record_count: 0,
+    incident_ids: [],
+    data_source: "PENDING_TRACK_A_CAPTURE",
+    is_live: false,
+    unavailable_reason:
+      "Live FRRouting capture not yet completed by Track A on MacBook 1. Telemetry unavailable.",
+  },
+  {
+    snapshot_id: "snap-f4_packet_loss",
+    scenario_key: "F4_PACKET_LOSS",
+    name: "F4: Packet Loss (Certified Live Experiment)",
+    description:
+      "Target: Link L12 netem packet loss. Certified live containerlab execution pending from Track A.",
+    category: "CERTIFIED_LIVE_EXPERIMENT",
+    availability: "UNAVAILABLE_PENDING_CAPTURE",
+    certified_fault_id: "F4_PACKET_LOSS",
+    target_component: "L12",
+    captured_at: null,
+    record_count: 0,
+    incident_ids: [],
+    data_source: "PENDING_TRACK_A_CAPTURE",
+    is_live: false,
+    unavailable_reason:
+      "Live FRRouting capture not yet completed by Track A on MacBook 1. Telemetry unavailable.",
+  },
+  {
+    snapshot_id: "snap-f5_high_latency",
+    scenario_key: "F5_HIGH_LATENCY",
+    name: "F5: High Latency (Certified Live Experiment)",
+    description:
+      "Target: Link L12 netem artificial delay. Certified live containerlab execution pending from Track A.",
+    category: "CERTIFIED_LIVE_EXPERIMENT",
+    availability: "UNAVAILABLE_PENDING_CAPTURE",
+    certified_fault_id: "F5_HIGH_LATENCY",
+    target_component: "L12",
+    captured_at: null,
+    record_count: 0,
+    incident_ids: [],
+    data_source: "PENDING_TRACK_A_CAPTURE",
+    is_live: false,
+    unavailable_reason:
+      "Live FRRouting capture not yet completed by Track A on MacBook 1. Telemetry unavailable.",
+  },
+
+  // 2. Phase 06 Benchmark Evaluation Dataset (Historical Captures)
   {
     snapshot_id: "obs-snap-20261019T190206Z-ef8890",
-    scenario_key: "baseline",
-    name: "Normal Operating Baseline",
-    description: "All 5 FRRouting nodes up, 5 links healthy, full OSPFv2.",
+    scenario_key: "BENCH_BASELINE",
+    name: "Benchmark Baseline: Healthy State",
+    description:
+      "Historical Phase 06 benchmark baseline: all 5 FRRouting nodes up, 5 links healthy.",
+    category: "BENCHMARK_EVALUATION",
+    availability: "AVAILABLE",
     captured_at: "2026-10-19T19:02:29Z",
     record_count: 211,
     incident_ids: ["incident-400cfe3751f0cb9c"],
@@ -405,9 +513,11 @@ export const DEMO_SCENARIOS: SnapshotSummary[] = [
   },
   {
     snapshot_id: "obs-snap-20261019T190230Z-320d01",
-    scenario_key: "F1",
-    name: "Scenario F1: Link L12 Failure",
-    description: "Hard failure on link L12 between R1 and R2. Dual OSPF adjacency drop.",
+    scenario_key: "BENCH_001_LINK_FAILURE",
+    name: "Benchmark Case 001: Historical Link Failure",
+    description: "Historical cross-run capture from Phase 04/06 benchmark evaluation.",
+    category: "BENCHMARK_EVALUATION",
+    availability: "AVAILABLE",
     captured_at: "2026-10-19T19:02:53Z",
     record_count: 109,
     incident_ids: ["incident-ad09617eb2c57e0d"],
@@ -416,9 +526,11 @@ export const DEMO_SCENARIOS: SnapshotSummary[] = [
   },
   {
     snapshot_id: "obs-snap-20261019T190307Z-2b4c8c",
-    scenario_key: "F2",
-    name: "Scenario F2: Router R3 Failure",
-    description: "Total node outage of router R3 affecting adjacencies on links L23 and L34.",
+    scenario_key: "BENCH_002_ROUTER_FAILURE",
+    name: "Benchmark Case 002: Historical Router Failure",
+    description: "Historical cross-run capture for router R3 failure from Phase 04/06 benchmark.",
+    category: "BENCHMARK_EVALUATION",
+    availability: "AVAILABLE",
     captured_at: "2026-10-19T19:03:31Z",
     record_count: 100,
     incident_ids: ["incident-18d4c4764899409f"],
@@ -427,9 +539,11 @@ export const DEMO_SCENARIOS: SnapshotSummary[] = [
   },
   {
     snapshot_id: "obs-snap-20261019T190431Z-a195d9",
-    scenario_key: "F3",
-    name: "Scenario F3: OSPF Config Mismatch on L23",
-    description: "Config mismatch (MTU/Hello) causing adjacency drop between R2 and R3.",
+    scenario_key: "BENCH_003_OSPF_MISMATCH",
+    name: "Benchmark Case 003: Historical OSPF Mismatch",
+    description: "Historical cross-run capture with config mismatch on L23 (Phase 04/06).",
+    category: "BENCHMARK_EVALUATION",
+    availability: "AVAILABLE",
     captured_at: "2026-10-19T19:04:45Z",
     record_count: 101,
     incident_ids: ["incident-36ae1e34674d1017"],
@@ -438,9 +552,11 @@ export const DEMO_SCENARIOS: SnapshotSummary[] = [
   },
   {
     snapshot_id: "obs-snap-20261019T190446Z-9f22e1",
-    scenario_key: "F4",
-    name: "Scenario F4: Partial Packet Loss",
-    description: "Intermittent packet loss induced on link L34 causing telemetry anomalies.",
+    scenario_key: "BENCH_004_PACKET_LOSS",
+    name: "Benchmark Case 004: Historical Packet Loss",
+    description: "Historical cross-run capture from Phase 04/06 benchmark evaluation.",
+    category: "BENCHMARK_EVALUATION",
+    availability: "AVAILABLE",
     captured_at: "2026-10-19T19:05:01Z",
     record_count: 111,
     incident_ids: ["incident-54f8b1979200e694"],
@@ -449,9 +565,11 @@ export const DEMO_SCENARIOS: SnapshotSummary[] = [
   },
   {
     snapshot_id: "obs-snap-20261019T190536Z-060d3f",
-    scenario_key: "F5",
-    name: "Scenario F5: High Latency / Jitter",
-    description: "Elevated RTT latency and jitter across transit ring path.",
+    scenario_key: "BENCH_005_HIGH_LATENCY",
+    name: "Benchmark Case 005: Historical High Latency",
+    description: "Historical cross-run capture from Phase 04/06 benchmark evaluation.",
+    category: "BENCHMARK_EVALUATION",
+    availability: "AVAILABLE",
     captured_at: "2026-10-19T19:05:51Z",
     record_count: 111,
     incident_ids: ["incident-aa63ad89c08c4a6f"],
@@ -520,35 +638,36 @@ export async function fetchTopology(snapshotId?: string): Promise<TopologySnapsh
 
 export async function fetchTopologyStatus(snapshotId?: string): Promise<TopologyStatus> {
   const query = snapshotId ? `?snapshot_id=${encodeURIComponent(snapshotId)}` : "";
-  const isF1 = snapshotId?.toLowerCase() === "f1";
-  const isF2 = snapshotId?.toLowerCase() === "f2";
-  const isF3 = snapshotId?.toLowerCase() === "f3";
+  const sKey = (snapshotId || "").toLowerCase();
+  const isF1 = sKey.includes("f1");
+  const isBenchF2 = sKey.includes("bench_002");
+  const isBenchF3 = sKey.includes("bench_003");
 
   const fallback: TopologyStatus = {
-    snapshot_id: snapshotId || "snap-baseline",
-    data_source: "ARCHIVED_REPLAY",
+    snapshot_id: snapshotId || "snap-f1-live",
+    data_source: isF1 ? "CERTIFIED_LIVE_RUN" : "ARCHIVED_REPLAY",
     is_live: false,
     is_replay: true,
     total_routers: 5,
-    routers_up: isF2 ? 4 : 5,
-    routers_down: isF2 ? 1 : 0,
+    routers_up: isBenchF2 ? 4 : 5,
+    routers_down: isBenchF2 ? 1 : 0,
     routers_unknown: 0,
     total_links: 5,
-    links_healthy: isF1 || isF2 || isF3 ? 4 : 5,
-    links_degraded: isF3 ? 1 : 0,
-    links_down: isF1 || isF2 ? 1 : 0,
+    links_healthy: isF1 || isBenchF2 || isBenchF3 ? 4 : 5,
+    links_degraded: isBenchF3 ? 1 : 0,
+    links_down: isF1 || isBenchF2 ? 1 : 0,
     links_unknown: 0,
     router_statuses: {
       R1: "UP",
       R2: "UP",
-      R3: isF2 ? "DOWN" : "UP",
+      R3: isBenchF2 ? "DOWN" : "UP",
       R4: "UP",
       R5: "UP",
     },
     link_statuses: {
       L12: isF1 ? "DOWN" : "HEALTHY",
-      L23: isF2 ? "DOWN" : isF3 ? "DEGRADED" : "HEALTHY",
-      L34: isF2 ? "DOWN" : "HEALTHY",
+      L23: isBenchF2 ? "DOWN" : isBenchF3 ? "DEGRADED" : "HEALTHY",
+      L34: isBenchF2 ? "DOWN" : "HEALTHY",
       L45: "HEALTHY",
       L51: "HEALTHY",
     },
@@ -762,6 +881,7 @@ export async function fetchVerification(incidentId: string): Promise<Verificatio
 export async function fetchProbePlan(incidentId: string): Promise<SafeProbePlan> {
   const fallback: SafeProbePlan = {
     incident_id: incidentId,
+    status: "PROVISIONAL",
     recommendations: [
       {
         probe_id: "probe-ping-r1-r2",
@@ -772,7 +892,8 @@ export async function fetchProbePlan(incidentId: string): Promise<SafeProbePlan>
         target_address: "10.0.12.2",
         target_interface: null,
         target_prefix: null,
-        selection_reason: "Verify reachability drop directly over point-to-point interface 10.0.12.2.",
+        selection_reason:
+          "Provisional check for L12 reachability based on counterfactual expectations.",
         timeout_s: 5,
         requested_at: new Date().toISOString(),
       },
@@ -785,20 +906,30 @@ export async function fetchProbePlan(incidentId: string): Promise<SafeProbePlan>
         target_address: null,
         target_interface: "eth1",
         target_prefix: null,
-        selection_reason: "Inspect operational carrier state and error counters on local interface eth1.",
+        selection_reason:
+          "Provisional inspection of operational carrier state on local interface eth1.",
         timeout_s: 5,
         requested_at: new Date().toISOString(),
       },
     ],
+    information_gain: "UNAVAILABLE_PENDING_PHASE_08_PLANNER",
+    entropy_reduction_bits: null,
+    planner_source: "Phase 07 Counterfactual Verifier (Provisional)",
     safety_guardrail: "STRICT_READ_ONLY_GUARDED",
     execution_permitted: false,
+    execution_blocked_reason:
+      "Active probe execution is disabled. Requires authorized Track A execution engine.",
     notes: [
       "Probes are strictly bounded to read-only non-destructive operations (PING, INTERFACE_STATE, OSPF_NEIGHBOUR, ROUTING_TABLE).",
       "Timeout is hard-bounded at 5 seconds per probe.",
       "Active probe execution is DISABLED on presentation environment.",
+      "Provisional recommendations pending Phase 08 deterministic probe planner delivery.",
     ],
   };
-  return safeFetch<SafeProbePlan>(`/api/v1/probes/recommendations/${encodeURIComponent(incidentId)}`, fallback);
+  return safeFetch<SafeProbePlan>(
+    `/api/v1/probes/recommendations/${encodeURIComponent(incidentId)}`,
+    fallback
+  );
 }
 
 export async function fetchEvidence(params: {

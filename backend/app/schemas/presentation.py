@@ -24,9 +24,24 @@ from app.schemas.topology import NetworkLink, Router, RouterStatus
 class DataSourceMode(str, Enum):
     """Lineage mode of the data returned by the presentation API."""
 
+    CERTIFIED_LIVE_RUN = "CERTIFIED_LIVE_RUN"
     ARCHIVED_REPLAY = "ARCHIVED_REPLAY"
     CANONICAL_SPECIFICATION = "CANONICAL_SPECIFICATION"
-    LIVE_LAB_EMULATION = "LIVE_LAB_EMULATION"
+    PENDING_TRACK_A_CAPTURE = "PENDING_TRACK_A_CAPTURE"
+
+
+class ScenarioCategory(str, Enum):
+    """Classification of scenarios: certified live experiments vs historical benchmarks."""
+
+    CERTIFIED_LIVE_EXPERIMENT = "CERTIFIED_LIVE_EXPERIMENT"
+    BENCHMARK_EVALUATION = "BENCHMARK_EVALUATION"
+
+
+class ScenarioAvailability(str, Enum):
+    """Availability of archived telemetry data."""
+
+    AVAILABLE = "AVAILABLE"
+    UNAVAILABLE_PENDING_CAPTURE = "UNAVAILABLE_PENDING_CAPTURE"
 
 
 class SubsystemStatus(str, Enum):
@@ -58,8 +73,16 @@ class SystemReadinessResponse(BaseModel):
     subsystems: dict[str, SubsystemStatus] = Field(
         description="Readiness status per architectural component.",
     )
+    available_certified_scenarios: list[str] = Field(
+        default_factory=list,
+        description="Available certified live experiments (e.g. ['F1_LINK_FAILURE']).",
+    )
+    available_benchmark_scenarios: list[str] = Field(
+        default_factory=list,
+        description="Available benchmark evaluation scenarios.",
+    )
     available_archived_scenarios: list[str] = Field(
-        description="Available scenario keys for demo replay (e.g. ['baseline', 'F1', ...]).",
+        description="All scenario keys available for presentation.",
     )
     checked_at: datetime = Field(
         description="UTC timestamp when readiness check was evaluated.",
@@ -140,11 +163,16 @@ class SnapshotSummary(BaseModel):
     scenario_key: str
     name: str
     description: str
-    captured_at: datetime
-    record_count: int
-    incident_ids: list[str]
+    category: ScenarioCategory = ScenarioCategory.CERTIFIED_LIVE_EXPERIMENT
+    availability: ScenarioAvailability = ScenarioAvailability.AVAILABLE
+    certified_fault_id: str | None = None
+    target_component: str | None = None
+    captured_at: datetime | None = None
+    record_count: int = 0
+    incident_ids: list[str] = Field(default_factory=list)
     data_source: DataSourceMode = DataSourceMode.ARCHIVED_REPLAY
     is_live: bool = False
+    unavailable_reason: str | None = None
 
 
 class IncidentSummary(BaseModel):
@@ -161,6 +189,10 @@ class IncidentSummary(BaseModel):
     correlation_window_start: datetime
     correlation_window_end: datetime | None
     correlation_explanation: str
+    score_label: str = "Rule Alignment Score"
+    score_interpretation: str = (
+        "Deterministic heuristic score in [0.0, 1.0] derived from fault rule matching."
+    )
     data_source: DataSourceMode = DataSourceMode.ARCHIVED_REPLAY
     is_live: bool = False
 
@@ -184,7 +216,23 @@ class SafeProbePlanResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     incident_id: str
-    recommendations: list[ProbeRequest]
+    status: str = Field(
+        default="PROVISIONAL",
+        description="Provisional recommendations pending Phase 08 planner.",
+    )
+    recommendations: list[ProbeRequest] = Field(default_factory=list)
+    information_gain: str = Field(
+        default="UNAVAILABLE_PENDING_PHASE_08_PLANNER",
+        description="Information gain metric status.",
+    )
+    entropy_reduction_bits: float | None = Field(
+        default=None,
+        description="Entropy reduction is computed solely by Phase 08 planner.",
+    )
+    planner_source: str = Field(
+        default="Phase 07 Counterfactual Verifier (Provisional)",
+        description="Upstream engine producing provisional recommendations.",
+    )
     safety_guardrail: str = Field(
         default="STRICT_READ_ONLY_GUARDED",
         description="Safety protocol state.",
@@ -193,7 +241,14 @@ class SafeProbePlanResponse(BaseModel):
         default=False,
         description="Execution is disabled until human authorization and dedicated backend exists.",
     )
-    notes: list[str]
+    execution_blocked_reason: str = Field(
+        default=(
+            "Active probe execution is disabled. Requires authorized Track A execution engine."
+        ),
+        description="Reason why execution is blocked.",
+    )
+    notes: list[str] = Field(default_factory=list)
+    data_source: DataSourceMode = DataSourceMode.ARCHIVED_REPLAY
 
 
 class DetailError(BaseModel):

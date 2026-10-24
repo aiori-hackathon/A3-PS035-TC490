@@ -99,11 +99,13 @@ def test_snapshots_catalog(client: TestClient) -> None:
     items = res.json()
     assert len(items) >= 5
     scenario_keys = {item["scenario_key"] for item in items}
-    assert "baseline" in scenario_keys or "BASELINE" in scenario_keys
-    assert "F1" in scenario_keys
+    assert any("F1" in k for k in scenario_keys)
+    assert any("BASELINE" in k.upper() for k in scenario_keys)
 
     # Get specific snapshot
-    f1_item = next(it for it in items if it["scenario_key"] == "F1")
+    f1_item = next(
+        it for it in items if "F1" in it["scenario_key"] and it["availability"] == "AVAILABLE"
+    )
     res_snap = client.get(f"/api/v1/snapshots/{f1_item['snapshot_id']}")
     assert res_snap.status_code == 200
     snap_data = res_snap.json()

@@ -1,9 +1,17 @@
 """
-Presentation adapter service for NEXORA Track B (Phase 10).
+Presentation Layer Adapter for NEXORA Track B.
 
-Loads, validates, and indexes archived scenarios and snapshots from the evaluation dataset.
-Connects existing DiagnosisEngine and CounterfactualVerificationEngine to presentation endpoints.
-Strictly isolates ground truth: never injects or queries lab ground-truth labels.
+Bridges existing core domain engines and archived evaluation snapshots into
+clean, presentation-layer contracts for the Next.js Operations Console.
+
+Key Invariants:
+- Separation of Certified Live Experiments from Historical Benchmark Evaluation.
+- F1_LINK_FAILURE is loaded from certified live observations (Phase 06.4).
+- F2-F5 certified live experiments are marked UNAVAILABLE pending Track A lab execution.
+- Deterministic heuristic scoring labels (no fabricated Bayesian/probability claims).
+- Safe active probe recommendations are marked PROVISIONAL (pending Phase 08 planner).
+- Ground-truth isolation: never leak injected fault labels to inference.
+- Read-only safety: zero mutation of live network state or execution tokens.
 """
 
 from __future__ import annotations
@@ -16,10 +24,8 @@ from typing import Any
 from app.collectors.normalizer import EvidenceNormalizer
 from app.collectors.topology_collector import EXPECTED_LINKS_SPEC
 from app.diagnosis.engine import DiagnosisEngine
-from app.schemas.counterfactual import VerificationReport
 from app.schemas.diagnosis import DiagnosisResult, RankedHypothesis
 from app.schemas.evidence import EvidenceRecord
-from app.schemas.incident import Incident
 from app.schemas.presentation import (
     DataSourceMode,
     IncidentSummary,
@@ -27,6 +33,8 @@ from app.schemas.presentation import (
     LinkHealthStatus,
     RouterDetailResponse,
     SafeProbePlanResponse,
+    ScenarioAvailability,
+    ScenarioCategory,
     SnapshotSummary,
     SubsystemStatus,
     SystemReadinessResponse,
@@ -42,48 +50,175 @@ from app.schemas.topology import (
 )
 from app.verification.engine import CounterfactualVerificationEngine
 
-# Friendly scenario metadata catalog
-SCENARIO_METADATA: dict[str, dict[str, str]] = {
-    "baseline": {
-        "scenario_key": "baseline",
-        "name": "Normal Operating Baseline",
-        "description": "All 5 FRRouting nodes (R1-R5) up, 5 links healthy, full OSPFv2.",
-    },
-    "f1": {
-        "scenario_key": "F1",
-        "name": "Scenario F1: Link L12 Failure",
-        "description": "Hard failure on link L12 between R1 and R2. Dual OSPF adjacency drop.",
-    },
-    "f2": {
-        "scenario_key": "F2",
-        "name": "Scenario F2: Router R3 Failure",
-        "description": "Total node outage of router R3 affecting adjacencies on links L23 and L34.",
-    },
-    "f3": {
-        "scenario_key": "F3",
-        "name": "Scenario F3: OSPF Config Mismatch on L23",
-        "description": "Config mismatch (MTU/Hello) causing adjacency drop between R2 and R3.",
-    },
-    "f4": {
-        "scenario_key": "F4",
-        "name": "Scenario F4: Partial Packet Loss",
-        "description": "Intermittent packet loss induced on link L34 causing telemetry anomalies.",
-    },
-    "f5": {
-        "scenario_key": "F5",
-        "name": "Scenario F5: High Latency / Jitter",
-        "description": "Elevated RTT latency and jitter across transit ring path.",
-    },
-}
+# ---------------------------------------------------------------------------
+# Canonical Scenario Metadata Definitions
+# ---------------------------------------------------------------------------
 
-SNAPSHOT_FILE_MAP: dict[str, str] = {
-    "baseline": "baseline_snapshot.json",
-    "f1": "f1_link_failure_snapshot.json",
-    "f2": "f2_router_failure_snapshot.json",
-    "f3": "f3_ospf_mismatch_snapshot.json",
-    "f4": "f4_packet_loss_snapshot.json",
-    "f5": "f5_high_latency_snapshot.json",
-}
+CERTIFIED_LIVE_CATALOG: list[dict[str, Any]] = [
+    {
+        "scenario_key": "F1_LINK_FAILURE",
+        "name": "F1: Link Failure (Certified Live Run)",
+        "certified_fault_id": "F1_LINK_FAILURE",
+        "target_component": "L12",
+        "category": ScenarioCategory.CERTIFIED_LIVE_EXPERIMENT,
+        "availability": ScenarioAvailability.AVAILABLE,
+        "rel_path": "live/f1_link_failure_snapshot.json",
+        "data_source": DataSourceMode.CERTIFIED_LIVE_RUN,
+        "description": (
+            "Certified live FRRouting experiment on link L12. "
+            "Verified contemporaneous capture binding from Phase 06.4."
+        ),
+        "unavailable_reason": None,
+    },
+    {
+        "scenario_key": "F2_ROUTER_FAILURE",
+        "name": "F2: Router Failure (Certified Live Experiment)",
+        "certified_fault_id": "F2_ROUTER_FAILURE",
+        "target_component": "R3",
+        "category": ScenarioCategory.CERTIFIED_LIVE_EXPERIMENT,
+        "availability": ScenarioAvailability.UNAVAILABLE_PENDING_CAPTURE,
+        "rel_path": None,
+        "data_source": DataSourceMode.PENDING_TRACK_A_CAPTURE,
+        "description": (
+            "Target: Router R3 node outage. "
+            "Certified live containerlab execution pending from Track A."
+        ),
+        "unavailable_reason": (
+            "Live FRRouting capture not yet completed by Track A on MacBook 1. "
+            "Telemetry unavailable."
+        ),
+    },
+    {
+        "scenario_key": "F3_OSPF_CONFIG_MISMATCH",
+        "name": "F3: OSPF Config Mismatch (Certified Live Experiment)",
+        "certified_fault_id": "F3_OSPF_CONFIG_MISMATCH",
+        "target_component": "L12",
+        "category": ScenarioCategory.CERTIFIED_LIVE_EXPERIMENT,
+        "availability": ScenarioAvailability.UNAVAILABLE_PENDING_CAPTURE,
+        "rel_path": None,
+        "data_source": DataSourceMode.PENDING_TRACK_A_CAPTURE,
+        "description": (
+            "Target: Link L12 hello/dead timer mismatch. "
+            "Certified live containerlab execution pending from Track A."
+        ),
+        "unavailable_reason": (
+            "Live FRRouting capture not yet completed by Track A on MacBook 1. "
+            "Telemetry unavailable."
+        ),
+    },
+    {
+        "scenario_key": "F4_PACKET_LOSS",
+        "name": "F4: Packet Loss (Certified Live Experiment)",
+        "certified_fault_id": "F4_PACKET_LOSS",
+        "target_component": "L12",
+        "category": ScenarioCategory.CERTIFIED_LIVE_EXPERIMENT,
+        "availability": ScenarioAvailability.UNAVAILABLE_PENDING_CAPTURE,
+        "rel_path": None,
+        "data_source": DataSourceMode.PENDING_TRACK_A_CAPTURE,
+        "description": (
+            "Target: Link L12 netem packet loss. "
+            "Certified live containerlab execution pending from Track A."
+        ),
+        "unavailable_reason": (
+            "Live FRRouting capture not yet completed by Track A on MacBook 1. "
+            "Telemetry unavailable."
+        ),
+    },
+    {
+        "scenario_key": "F5_HIGH_LATENCY",
+        "name": "F5: High Latency (Certified Live Experiment)",
+        "certified_fault_id": "F5_HIGH_LATENCY",
+        "target_component": "L12",
+        "category": ScenarioCategory.CERTIFIED_LIVE_EXPERIMENT,
+        "availability": ScenarioAvailability.UNAVAILABLE_PENDING_CAPTURE,
+        "rel_path": None,
+        "data_source": DataSourceMode.PENDING_TRACK_A_CAPTURE,
+        "description": (
+            "Target: Link L12 netem artificial delay. "
+            "Certified live containerlab execution pending from Track A."
+        ),
+        "unavailable_reason": (
+            "Live FRRouting capture not yet completed by Track A on MacBook 1. "
+            "Telemetry unavailable."
+        ),
+    },
+]
+
+BENCHMARK_EVAL_CATALOG: list[dict[str, Any]] = [
+    {
+        "scenario_key": "BENCH_BASELINE",
+        "name": "Benchmark Baseline: Healthy State",
+        "category": ScenarioCategory.BENCHMARK_EVALUATION,
+        "availability": ScenarioAvailability.AVAILABLE,
+        "rel_path": "baseline_snapshot.json",
+        "data_source": DataSourceMode.ARCHIVED_REPLAY,
+        "description": (
+            "Historical Phase 06 benchmark baseline: all 5 FRRouting nodes up, "
+            "5 links healthy."
+        ),
+        "unavailable_reason": None,
+    },
+    {
+        "scenario_key": "BENCH_001_LINK_FAILURE",
+        "name": "Benchmark Case 001: Historical Link Failure",
+        "category": ScenarioCategory.BENCHMARK_EVALUATION,
+        "availability": ScenarioAvailability.AVAILABLE,
+        "rel_path": "f1_link_failure_snapshot.json",
+        "data_source": DataSourceMode.ARCHIVED_REPLAY,
+        "description": (
+            "Historical cross-run capture from Phase 04/06 benchmark evaluation."
+        ),
+        "unavailable_reason": None,
+    },
+    {
+        "scenario_key": "BENCH_002_ROUTER_FAILURE",
+        "name": "Benchmark Case 002: Historical Router Failure",
+        "category": ScenarioCategory.BENCHMARK_EVALUATION,
+        "availability": ScenarioAvailability.AVAILABLE,
+        "rel_path": "f2_router_failure_snapshot.json",
+        "data_source": DataSourceMode.ARCHIVED_REPLAY,
+        "description": (
+            "Historical cross-run capture for router R3 failure from Phase 04/06 benchmark."
+        ),
+        "unavailable_reason": None,
+    },
+    {
+        "scenario_key": "BENCH_003_OSPF_MISMATCH",
+        "name": "Benchmark Case 003: Historical OSPF Mismatch",
+        "category": ScenarioCategory.BENCHMARK_EVALUATION,
+        "availability": ScenarioAvailability.AVAILABLE,
+        "rel_path": "f3_ospf_mismatch_snapshot.json",
+        "data_source": DataSourceMode.ARCHIVED_REPLAY,
+        "description": (
+            "Historical cross-run capture with config mismatch on L23 (Phase 04/06)."
+        ),
+        "unavailable_reason": None,
+    },
+    {
+        "scenario_key": "BENCH_004_PACKET_LOSS",
+        "name": "Benchmark Case 004: Historical Packet Loss",
+        "category": ScenarioCategory.BENCHMARK_EVALUATION,
+        "availability": ScenarioAvailability.AVAILABLE,
+        "rel_path": "f4_packet_loss_snapshot.json",
+        "data_source": DataSourceMode.ARCHIVED_REPLAY,
+        "description": (
+            "Historical cross-run capture from Phase 04/06 benchmark evaluation."
+        ),
+        "unavailable_reason": None,
+    },
+    {
+        "scenario_key": "BENCH_005_HIGH_LATENCY",
+        "name": "Benchmark Case 005: Historical High Latency",
+        "category": ScenarioCategory.BENCHMARK_EVALUATION,
+        "availability": ScenarioAvailability.AVAILABLE,
+        "rel_path": "f5_high_latency_snapshot.json",
+        "data_source": DataSourceMode.ARCHIVED_REPLAY,
+        "description": (
+            "Historical cross-run capture from Phase 04/06 benchmark evaluation."
+        ),
+        "unavailable_reason": None,
+    },
+]
 
 
 def build_canonical_topology(snapshot_id: str | None = None) -> Topology:
@@ -139,9 +274,8 @@ class PresentationAdapter:
         self._raw_snapshots: dict[str, dict[str, Any]] = {}
         self._topologies: dict[str, Topology] = {}
         self._evidence_records: dict[str, list[EvidenceRecord]] = {}
-        self._incidents: dict[str, list[Incident]] = {}
         self._diagnoses: dict[str, list[DiagnosisResult]] = {}
-        self._verifications: dict[str, list[VerificationReport]] = {}
+        self._verifications: dict[str, list[Any]] = {}
         self._snapshot_id_to_key: dict[str, str] = {}
         self._incident_to_snapshot_key: dict[str, str] = {}
         self._evidence_index: dict[str, EvidenceRecord] = {}
@@ -172,17 +306,55 @@ class PresentationAdapter:
         )
 
     def _load_datasets(self) -> None:
-        """Load and index all archived scenario fixtures."""
-        for key, fname in SNAPSHOT_FILE_MAP.items():
-            fpath = self._dataset_dir / fname
+        """Load and index certified live runs and historical evaluation datasets."""
+        all_meta = CERTIFIED_LIVE_CATALOG + BENCHMARK_EVAL_CATALOG
+
+        # Setup alias lookups
+        aliases: dict[str, str] = {
+            "f1": "F1_LINK_FAILURE",
+            "f1_live": "F1_LINK_FAILURE",
+            "f1_link_failure": "F1_LINK_FAILURE",
+            "certified-f1": "F1_LINK_FAILURE",
+            "f2": "F2_ROUTER_FAILURE",
+            "f2_router_failure": "F2_ROUTER_FAILURE",
+            "f3": "F3_OSPF_CONFIG_MISMATCH",
+            "f3_ospf_mismatch": "F3_OSPF_CONFIG_MISMATCH",
+            "f4": "F4_PACKET_LOSS",
+            "f4_packet_loss": "F4_PACKET_LOSS",
+            "f5": "F5_HIGH_LATENCY",
+            "f5_high_latency": "F5_HIGH_LATENCY",
+            "baseline": "BENCH_BASELINE",
+            "bench_baseline": "BENCH_BASELINE",
+            "bench_001": "BENCH_001_LINK_FAILURE",
+            "bench_f1": "BENCH_001_LINK_FAILURE",
+            "bench_002": "BENCH_002_ROUTER_FAILURE",
+            "bench_f2": "BENCH_002_ROUTER_FAILURE",
+            "bench_003": "BENCH_003_OSPF_MISMATCH",
+            "bench_f3": "BENCH_003_OSPF_MISMATCH",
+            "bench_004": "BENCH_004_PACKET_LOSS",
+            "bench_f4": "BENCH_004_PACKET_LOSS",
+            "bench_005": "BENCH_005_HIGH_LATENCY",
+            "bench_f5": "BENCH_005_HIGH_LATENCY",
+        }
+        for alias, target in aliases.items():
+            self._snapshot_id_to_key[alias.lower()] = target
+
+        for item in all_meta:
+            key = item["scenario_key"]
+            self._snapshot_id_to_key[key.lower()] = key
+
+            rel = item.get("rel_path")
+            if not rel:
+                continue
+            fpath = self._dataset_dir / rel
             if not fpath.exists():
                 continue
+
             raw = json.loads(fpath.read_text())
             EvidenceNormalizer.assert_no_ground_truth_leakage(raw)
 
             snap_id = raw.get("snapshot_id", f"snap-{key}")
             self._raw_snapshots[key] = raw
-            self._snapshot_id_to_key[key.lower()] = key
             self._snapshot_id_to_key[snap_id] = key
 
             # Parse topology
@@ -190,6 +362,8 @@ class PresentationAdapter:
             if topo_dict:
                 topo = Topology.model_validate(topo_dict)
                 self._topologies[key] = topo
+            else:
+                self._topologies[key] = build_canonical_topology(snap_id)
 
             # Parse evidence records
             records = [
@@ -216,15 +390,15 @@ class PresentationAdapter:
                 self._verifications[key] = []
 
     def resolve_snapshot_key(self, identifier: str | None) -> str:
-        """Resolve a key like 'f1', 'F1', or 'obs-snap-...' to a canonical key ('f1')."""
+        """Resolve any scenario key, alias, or snapshot ID to canonical key."""
         if not identifier:
-            return "f1"  # Default active scenario for demonstration
-        clean = identifier.lower().strip()
+            return "F1_LINK_FAILURE"  # Default certified live scenario
+        clean = identifier.strip().lower()
         if clean in self._snapshot_id_to_key:
             return self._snapshot_id_to_key[clean]
         if identifier in self._snapshot_id_to_key:
             return self._snapshot_id_to_key[identifier]
-        return clean
+        return identifier.upper()
 
     # -----------------------------------------------------------------------
     # System Readiness
@@ -236,11 +410,20 @@ class PresentationAdapter:
             "deterministic_diagnostic_engine": SubsystemStatus.READY,
             "counterfactual_verification_engine": SubsystemStatus.READY,
             "safe_active_probe_planner": SubsystemStatus.READY,
-            "archived_scenario_catalog": (
-                SubsystemStatus.READY if len(self._raw_snapshots) >= 5 else SubsystemStatus.DEGRADED
-            ),
+            "certified_live_replay_archive": SubsystemStatus.READY,
+            "benchmark_evaluation_archive": SubsystemStatus.READY,
             "live_frrouting_emulation_lab": SubsystemStatus.STANDBY,
         }
+        avail_cert = [
+            item["scenario_key"]
+            for item in CERTIFIED_LIVE_CATALOG
+            if item["availability"] == ScenarioAvailability.AVAILABLE
+        ]
+        avail_bench = [
+            item["scenario_key"]
+            for item in BENCHMARK_EVAL_CATALOG
+            if item["availability"] == ScenarioAvailability.AVAILABLE
+        ]
         return SystemReadinessResponse(
             status="ready",
             service_name="nexora-backend",
@@ -249,9 +432,9 @@ class PresentationAdapter:
             data_source_mode=DataSourceMode.ARCHIVED_REPLAY,
             ground_truth_isolation_active=True,
             subsystems=subsystems,
-            available_archived_scenarios=[
-                SCENARIO_METADATA[k]["scenario_key"] for k in self._raw_snapshots
-            ],
+            available_certified_scenarios=avail_cert,
+            available_benchmark_scenarios=avail_bench,
+            available_archived_scenarios=avail_cert + avail_bench,
             checked_at=datetime.now(UTC),
         )
 
@@ -280,16 +463,17 @@ class PresentationAdapter:
         # Evaluate link health from incident / scenario status
         link_statuses: dict[str, LinkHealthStatus] = {}
         for lnk in topo.links:
-            # Check if incident directly affects this link or endpoints
-            if key == "f1" and lnk.link_id == "L12":
+            if key in ("F1_LINK_FAILURE", "BENCH_001_LINK_FAILURE") and lnk.link_id == "L12":
                 link_statuses[lnk.link_id] = LinkHealthStatus.DOWN
-            elif key == "f2" and (lnk.router_a == "R3" or lnk.router_b == "R3"):
+            elif key == "BENCH_002_ROUTER_FAILURE" and (
+                lnk.router_a == "R3" or lnk.router_b == "R3"
+            ):
                 link_statuses[lnk.link_id] = LinkHealthStatus.DOWN
-            elif key == "f3" and lnk.link_id == "L23":
+            elif key == "BENCH_003_OSPF_MISMATCH" and lnk.link_id == "L23":
                 link_statuses[lnk.link_id] = LinkHealthStatus.DEGRADED
-            elif key == "f4" and lnk.link_id == "L34":
+            elif key == "BENCH_004_PACKET_LOSS" and lnk.link_id == "L34":
                 link_statuses[lnk.link_id] = LinkHealthStatus.DEGRADED
-            elif key == "f5" and lnk.link_id in ("L12", "L23"):
+            elif key == "BENCH_005_HIGH_LATENCY" and lnk.link_id in ("L12", "L23"):
                 link_statuses[lnk.link_id] = LinkHealthStatus.DEGRADED
             else:
                 ra_status = router_statuses.get(lnk.router_a, RouterStatus.UP)
@@ -308,9 +492,16 @@ class PresentationAdapter:
         ldown_cnt = sum(1 for s in link_statuses.values() if s == LinkHealthStatus.DOWN)
         lunk_cnt = sum(1 for s in link_statuses.values() if s == LinkHealthStatus.UNKNOWN)
 
+        # Tag data lineage appropriately
+        data_source = DataSourceMode.ARCHIVED_REPLAY
+        if key == "F1_LINK_FAILURE":
+            data_source = DataSourceMode.CERTIFIED_LIVE_RUN
+        elif key.startswith("F") and key != "F1_LINK_FAILURE":
+            data_source = DataSourceMode.PENDING_TRACK_A_CAPTURE
+
         return TopologyStatusSummary(
             snapshot_id=topo.snapshot_id,
-            data_source=DataSourceMode.ARCHIVED_REPLAY,
+            data_source=data_source,
             is_live=False,
             is_replay=True,
             total_routers=len(topo.routers),
@@ -377,7 +568,7 @@ class PresentationAdapter:
                     ),
                     endpoint_a_status=router_map.get(lnk.router_a, RouterStatus.UP),
                     endpoint_b_status=router_map.get(lnk.router_b, RouterStatus.UP),
-                    data_source=DataSourceMode.ARCHIVED_REPLAY,
+                    data_source=status_sum.data_source,
                     is_live=False,
                 )
             )
@@ -395,23 +586,39 @@ class PresentationAdapter:
     # -----------------------------------------------------------------------
     def list_snapshots(self) -> list[SnapshotSummary]:
         res = []
-        for key, raw in self._raw_snapshots.items():
-            meta = SCENARIO_METADATA.get(
-                key, {"scenario_key": key.upper(), "name": key, "description": ""}
-            )
+        all_catalog = CERTIFIED_LIVE_CATALOG + BENCHMARK_EVAL_CATALOG
+        for item in all_catalog:
+            key = item["scenario_key"]
+            raw = self._raw_snapshots.get(key)
             diag_list = self._diagnoses.get(key, [])
             inc_ids = [d.incident_id for d in diag_list]
+
+            captured = None
+            rec_cnt = 0
+            snap_id = f"snap-{key.lower()}"
+            if raw:
+                snap_id = raw.get("snapshot_id", snap_id)
+                cap_str = raw.get("captured_at")
+                if cap_str:
+                    captured = datetime.fromisoformat(cap_str.replace("Z", "+00:00"))
+                rec_cnt = len(raw.get("evidence_records", []))
+
             res.append(
                 SnapshotSummary(
-                    snapshot_id=raw.get("snapshot_id", f"snap-{key}"),
-                    scenario_key=meta["scenario_key"],
-                    name=meta["name"],
-                    description=meta["description"],
-                    captured_at=datetime.fromisoformat(raw["captured_at"].replace("Z", "+00:00")),
-                    record_count=len(raw.get("evidence_records", [])),
+                    snapshot_id=snap_id,
+                    scenario_key=key,
+                    name=item["name"],
+                    description=item["description"],
+                    category=item["category"],
+                    availability=item["availability"],
+                    certified_fault_id=item.get("certified_fault_id"),
+                    target_component=item.get("target_component"),
+                    captured_at=captured,
+                    record_count=rec_cnt,
                     incident_ids=inc_ids,
-                    data_source=DataSourceMode.ARCHIVED_REPLAY,
+                    data_source=item["data_source"],
                     is_live=False,
+                    unavailable_reason=item.get("unavailable_reason"),
                 )
             )
         return res
@@ -432,12 +639,15 @@ class PresentationAdapter:
         )
         for key in target_keys:
             diag_list = self._diagnoses.get(key, [])
-            meta = SCENARIO_METADATA.get(key, {"scenario_key": key.upper()})
             raw = self._raw_snapshots.get(key, {})
             start_str = raw.get("collection_window_start", "2026-10-19T19:00:00Z")
             end_str = raw.get("collection_window_end")
             start = datetime.fromisoformat(start_str.replace("Z", "+00:00"))
             end = datetime.fromisoformat(end_str.replace("Z", "+00:00")) if end_str else None
+
+            data_source = DataSourceMode.ARCHIVED_REPLAY
+            if key == "F1_LINK_FAILURE":
+                data_source = DataSourceMode.CERTIFIED_LIVE_RUN
 
             for d in diag_list:
                 aff_routers: set[str] = set()
@@ -454,14 +664,19 @@ class PresentationAdapter:
                     IncidentSummary(
                         incident_id=d.incident_id,
                         snapshot_id=raw.get("snapshot_id", f"snap-{key}"),
-                        scenario_key=meta["scenario_key"],
+                        scenario_key=key,
                         affected_routers=sorted(aff_routers),
                         affected_links=sorted(aff_links),
                         evidence_count=d.evidence_certificate.total_evidence_count,
                         correlation_window_start=start,
                         correlation_window_end=end,
                         correlation_explanation=d.evidence_certificate.reasoning_summary,
-                        data_source=DataSourceMode.ARCHIVED_REPLAY,
+                        score_label="Rule Alignment Score",
+                        score_interpretation=(
+                            "Deterministic heuristic score in [0.0, 1.0] derived "
+                            "from fault rule matching, not a probability."
+                        ),
+                        data_source=data_source,
                         is_live=False,
                     )
                 )
@@ -479,7 +694,6 @@ class PresentationAdapter:
             for d in self._diagnoses[key]:
                 if d.incident_id == incident_id:
                     return d
-        # Search all
         for diag_list in self._diagnoses.values():
             for d in diag_list:
                 if d.incident_id == incident_id:
@@ -499,7 +713,7 @@ class PresentationAdapter:
     # -----------------------------------------------------------------------
     # Counterfactual Verification
     # -----------------------------------------------------------------------
-    def get_verification(self, incident_id: str) -> VerificationReport | None:
+    def get_verification(self, incident_id: str) -> Any | None:
         key = self._incident_to_snapshot_key.get(incident_id)
         if key and key in self._verifications:
             for rep in self._verifications[key]:
@@ -511,14 +725,14 @@ class PresentationAdapter:
                     return rep
         return None
 
-    def list_verifications(self) -> list[VerificationReport]:
+    def list_verifications(self) -> list[Any]:
         res = []
         for verif_list in self._verifications.values():
             res.extend(verif_list)
         return res
 
     # -----------------------------------------------------------------------
-    # Probes
+    # Safe Diagnostic Probes (Provisional Preview)
     # -----------------------------------------------------------------------
     def get_probe_plan(self, incident_id: str) -> SafeProbePlanResponse:
         v = self.get_verification(incident_id)
@@ -534,13 +748,25 @@ class PresentationAdapter:
             ),
             "Timeout is hard-bounded at 5 seconds per probe.",
             "Active probe execution is DISABLED on MacBook 2 presentation environment.",
+            (
+                "Provisional recommendations from Phase 07 counterfactual verifier. "
+                "Deterministic Information Gain & Phase 08 planner outputs pending Track A."
+            ),
         ]
         return SafeProbePlanResponse(
             incident_id=incident_id,
+            status="PROVISIONAL",
             recommendations=probes,
+            information_gain="UNAVAILABLE_PENDING_PHASE_08_PLANNER",
+            entropy_reduction_bits=None,
+            planner_source="Phase 07 Counterfactual Verifier (Provisional)",
             safety_guardrail="STRICT_READ_ONLY_GUARDED",
             execution_permitted=False,
+            execution_blocked_reason=(
+                "Active probe execution is disabled. Requires authorized Track A execution engine."
+            ),
             notes=notes,
+            data_source=DataSourceMode.ARCHIVED_REPLAY,
         )
 
     # -----------------------------------------------------------------------
@@ -568,7 +794,12 @@ class PresentationAdapter:
         if event_type:
             filtered = [r for r in filtered if r.event_type.value == event_type]
         if incident_id:
-            filtered = [r for r in filtered if r.incident_id == incident_id]
+            d = self.get_diagnosis(incident_id)
+            if d:
+                all_ev_ids = set()
+                all_ev_ids.update(d.evidence_certificate.supporting_evidence_ids)
+                all_ev_ids.update(d.evidence_certificate.contradicting_evidence_ids)
+                filtered = [r for r in filtered if r.evidence_id in all_ev_ids]
 
         return filtered[offset : offset + limit]
 
@@ -580,21 +811,20 @@ class PresentationAdapter:
         incident_id: str | None = None,
         snapshot_id: str | None = None,
     ) -> int:
-        key = self.resolve_snapshot_key(snapshot_id)
-        records = self._evidence_records.get(key, [])
-
-        filtered = records
-        if router_id:
-            rid = router_id.upper()
-            filtered = [r for r in filtered if r.source_router == rid]
-        if source_type:
-            filtered = [r for r in filtered if r.source_type.value == source_type]
-        if event_type:
-            filtered = [r for r in filtered if r.event_type.value == event_type]
-        if incident_id:
-            filtered = [r for r in filtered if r.incident_id == incident_id]
-
-        return len(filtered)
+        return len(
+            self.query_evidence(
+                router_id=router_id,
+                source_type=source_type,
+                event_type=event_type,
+                incident_id=incident_id,
+                snapshot_id=snapshot_id,
+                limit=100000,
+                offset=0,
+            )
+        )
 
     def get_evidence(self, evidence_id: str) -> EvidenceRecord | None:
+        return self._evidence_index.get(evidence_id)
+
+    def get_evidence_record(self, evidence_id: str) -> EvidenceRecord | None:
         return self._evidence_index.get(evidence_id)
