@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import copy
 import json
+import os
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -65,14 +66,26 @@ from app.topology.graph import build_expected_topology_graph
 from app.verification.engine import CounterfactualVerificationEngine
 
 _BASE_DIR = Path(__file__).resolve().parents[2]
-_LIVE_ARCHIVES = Path("/Users/azriel/Nexora-backups/live-evidence")
 _FALLBACK_DATASETS = _BASE_DIR / "evaluation/datasets/observations"
+
+
+def _get_live_archives_dir() -> Path | None:
+    env_dir = os.environ.get("NEXORA_LIVE_EVIDENCE_DIR")
+    if env_dir:
+        p = Path(env_dir)
+        if p.exists() and p.is_dir():
+            return p
+    default_dir = Path("/Users/azriel/Nexora-backups/live-evidence")
+    if default_dir.exists() and default_dir.is_dir():
+        return default_dir
+    return None
 
 
 def _get_snapshot_path(scenario_code: str) -> Path:
     """Find the certified neutral snapshot for a scenario."""
-    if _LIVE_ARCHIVES.exists():
-        for d in _LIVE_ARCHIVES.iterdir():
+    archives_dir = _get_live_archives_dir()
+    if archives_dir and archives_dir.exists():
+        for d in archives_dir.iterdir():
             if d.is_dir() and d.name.startswith(f"{scenario_code.lower()}-"):
                 if (d / "snapshot.json").exists():
                     return d / "snapshot.json"

@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import copy
 import json
+import os
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -68,23 +69,66 @@ from app.schemas.topology import Topology
 from app.topology.graph import build_expected_topology_graph
 
 _BASE_DIR = Path(__file__).resolve().parents[2]
-_LIVE_ARCHIVES = Path("/Users/azriel/Nexora-backups/live-evidence")
 _FALLBACK_DATASETS = _BASE_DIR / "evaluation/datasets/observations"
+
+
+def _get_live_archives_dir() -> Path | None:
+    env_dir = os.environ.get("NEXORA_LIVE_EVIDENCE_DIR")
+    if env_dir:
+        p = Path(env_dir)
+        if p.exists() and p.is_dir():
+            return p
+    default_dir = Path("/Users/azriel/Nexora-backups/live-evidence")
+    if default_dir.exists() and default_dir.is_dir():
+        return default_dir
+    return None
+
+
+def _get_certified_live_snapshot(scenario_code: str) -> tuple[dict, dict | None]:
+    """Retrieve certified live snapshot and binding; skips if archives unavailable."""
+    archives_dir = _get_live_archives_dir()
+    if archives_dir is None or not archives_dir.exists():
+        pytest.skip(
+            "Certified live evidence archives not available on this machine "
+            "(set NEXORA_LIVE_EVIDENCE_DIR)"
+        )
+    dirs = {
+        "F1": archives_dir / "f1-exp-aab6c8bcaad34acfaa7583d3ea391948",
+        "F2": (
+            archives_dir
+            / "f2-exp-5acb69cba29d4b0497f4de2b3b97f1b6"
+            / "67bc39cd97744d9d92848847ad6c3945"
+        ),
+        "F3": archives_dir / "f3-exp-3d67ba780db64eff83471cacc1a80ea4",
+        "F4": archives_dir / "f4-exp-1e5e22df3c124d21a58e50884cc54b82",
+        "F5": archives_dir / "f5-exp-46f8c718e43a494ba628eb7f724325b4",
+    }
+    sdir = dirs.get(scenario_code)
+    if not sdir or not (sdir / "snapshot.json").exists():
+        pytest.skip(f"Certified live snapshot for {scenario_code} not found in {archives_dir}")
+    snap = json.loads((sdir / "snapshot.json").read_text())
+    binding = (
+        json.loads((sdir / "binding.json").read_text())
+        if (sdir / "binding.json").exists()
+        else None
+    )
+    return snap, binding
 
 
 def _get_snapshot_and_binding(scenario_code: str) -> tuple[dict, dict | None]:
     """Find certified snapshot and optional binding."""
-    if _LIVE_ARCHIVES.exists():
+    archives_dir = _get_live_archives_dir()
+    if archives_dir and archives_dir.exists():
         dirs = {
-            "F1": _LIVE_ARCHIVES / "f1-exp-aab6c8bcaad34acfaa7583d3ea391948",
+            "F1": archives_dir / "f1-exp-aab6c8bcaad34acfaa7583d3ea391948",
             "F2": (
-                _LIVE_ARCHIVES
+                archives_dir
                 / "f2-exp-5acb69cba29d4b0497f4de2b3b97f1b6"
                 / "67bc39cd97744d9d92848847ad6c3945"
             ),
-            "F3": _LIVE_ARCHIVES / "f3-exp-3d67ba780db64eff83471cacc1a80ea4",
-            "F4": _LIVE_ARCHIVES / "f4-exp-1e5e22df3c124d21a58e50884cc54b82",
-            "F5": _LIVE_ARCHIVES / "f5-exp-46f8c718e43a494ba628eb7f724325b4",
+            "F3": archives_dir / "f3-exp-3d67ba780db64eff83471cacc1a80ea4",
+            "F4": archives_dir / "f4-exp-1e5e22df3c124d21a58e50884cc54b82",
+            "F5": archives_dir / "f5-exp-46f8c718e43a494ba628eb7f724325b4",
         }
         sdir = dirs.get(scenario_code)
         if sdir and (sdir / "snapshot.json").exists():
@@ -407,7 +451,7 @@ def test_unsupported_fault_type_handling(generator: CertificateGenerator, topolo
 # -----------------------------------------------------------------------------
 def test_long_f2_explanation_bounded(generator: CertificateGenerator):
     """12. Multi-link F2 explanation does not exceed max_length=8192."""
-    raw, binding = _get_snapshot_and_binding("F2")
+    raw, binding = _get_certified_live_snapshot("F2")
     cert = generator.generate_from_snapshot_dict(raw, binding=binding)
 
     assert len(cert.explanation.full_text) <= 8192
@@ -552,7 +596,7 @@ def test_certified_live_scenarios(
     expected_location: str,
 ):
     """Verify certificate generation for all 5 certified live fault scenarios."""
-    snap, binding = _get_snapshot_and_binding(scenario_code)
+    snap, binding = _get_certified_live_snapshot(scenario_code)
     cert = generator.generate_from_snapshot_dict(snap, binding=binding)
 
     assert cert.certificate_id.startswith("cert-")
@@ -569,3 +613,40 @@ def test_certified_live_scenarios(
         assert cert.source_run_id == binding.get("run_id")
     assert len(cert.supporting_evidence_references) >= 1
     assert len(cert.explanation.full_text) > 500
+
+
+def test_f1_certificate_contradiction_audit(generator: CertificateGenerator):
+    """Audit F1 certificate contradictory evidence record and explanation.
+
+    Identifies exact contradictory observation ev-ospf-r2-1792582676407-f541c7-1-1-1-1
+    originating from R2 eth1 (OSPF_NEIGHBOUR_FULL at 2026-10-21T11:37:56.207926Z).
+    Verifies:
+    1. Preserved in contradictory_evidence_references.
+    2. Heuristic rule score reflects penalty (0.7500 vs 1.0000).
+    3. Counterfactual verdict remains SUPPORTED because physical carrier drop on R1
+       is confirmed and peer Full is explained by protocol dead-timer lag.
+    4. Certificate explanation accurately describes dead-timer lag.
+    """
+    snap, binding = _get_certified_live_snapshot("F1")
+    cert = generator.generate_from_snapshot_dict(snap, binding=binding)
+
+    assert cert.fault_type == FaultType.LINK_FAILURE
+    assert cert.fault_location is not None
+    assert cert.fault_location.component_id == "L12"
+    assert cert.original_heuristic_score == 0.75
+    assert cert.counterfactual_verdict == CounterfactualVerdict.SUPPORTED
+    assert len(cert.supporting_evidence_references) == 4
+    assert len(cert.contradictory_evidence_references) == 1
+
+    contra_ref = cert.contradictory_evidence_references[0]
+    assert contra_ref.evidence_id == "ev-ospf-r2-1792582676407-f541c7-1-1-1-1"
+    assert contra_ref.source_router == "R2"
+    assert contra_ref.source_interface == "eth1"
+    assert contra_ref.event_type == "OSPF_NEIGHBOUR_FULL"
+
+    # Verify explanation contains dead-timer lag clarification
+    contra_summary = cert.explanation.contradicting_observations_summary
+    assert "Full" in contra_summary
+    assert "dead-timer lag" in contra_summary
+    assert "dead-timer lag" in cert.explanation.why_selected
+

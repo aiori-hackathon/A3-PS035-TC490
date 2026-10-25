@@ -7,9 +7,9 @@ generates expected network observations and tests them against actual neutral ev
 
 from __future__ import annotations
 
+import hashlib
 from datetime import UTC, datetime
 from typing import Any
-from uuid import uuid4
 
 from app.collectors.normalizer import EvidenceNormalizer
 from app.diagnosis.evidence import EvidenceContext, decode_state_tags, unique_records
@@ -71,6 +71,7 @@ class CounterfactualVerificationEngine:
         evidence: list[EvidenceRecord],
         topology: Topology,
         incident_window: tuple[datetime, datetime | None] | None = None,
+        verified_at: datetime | None = None,
     ) -> CounterfactualVerificationResult:
         """Evaluate all counterfactual expectations for a hypothesis against evidence."""
         # Filter evidence to incident window if supplied
@@ -93,7 +94,9 @@ class CounterfactualVerificationEngine:
         recommended_probes: list[ProbeRequest] = []
 
         for exp in expectations:
-            eval_res, probes = self._evaluate_single_expectation(exp, ctx, hypothesis.incident_id)
+            eval_res, probes = self._evaluate_single_expectation(
+                exp, ctx, hypothesis.incident_id, verified_at=verified_at
+            )
             evaluated.append(eval_res)
             all_supporting.update(eval_res.supporting_evidence_ids)
             all_contradicting.update(eval_res.contradicting_evidence_ids)
@@ -161,8 +164,10 @@ class CounterfactualVerificationEngine:
         exp: ExpectedObservation,
         ctx: EvidenceContext,
         incident_id: str,
+        verified_at: datetime | None = None,
     ) -> tuple[EvaluatedExpectation, list[ProbeRequest]]:
         """Compare one expected observation against records in EvidenceContext."""
+        req_time = verified_at or datetime.now(UTC)
         category = exp.category
         comp = exp.target_component
         endpoint = exp.target_endpoint
@@ -191,9 +196,12 @@ class CounterfactualVerificationEngine:
                 ]
 
                 if not obs_a and not obs_b:
+                    probe_sig = f"{incident_id}:iface:{link.router_a}:{link.interface_a}"
+                    h = hashlib.sha256(probe_sig.encode("utf-8")).hexdigest()[:8]
+                    probe_id = f"probe-iface-{h}"
                     probes.append(
                         ProbeRequest(
-                            probe_id=f"probe-iface-{uuid4().hex[:8]}",
+                            probe_id=probe_id,
                             incident_id=incident_id,
                             probe_type=ProbeType.INTERFACE_STATE,
                             source_router=link.router_a,
@@ -202,7 +210,7 @@ class CounterfactualVerificationEngine:
                                 f"Verify operational state of {link.router_a} {link.interface_a} "
                                 "for link failure verification"
                             ),
-                            requested_at=datetime.now(UTC),
+                            requested_at=req_time,
                         )
                     )
                     return (
@@ -284,9 +292,12 @@ class CounterfactualVerificationEngine:
             ]
 
             if not matching_obs:
+                probe_sig = f"{incident_id}:iface:{router}:{iface}"
+                h = hashlib.sha256(probe_sig.encode("utf-8")).hexdigest()[:8]
+                probe_id = f"probe-iface-{h}"
                 probes.append(
                     ProbeRequest(
-                        probe_id=f"probe-iface-{uuid4().hex[:8]}",
+                        probe_id=probe_id,
                         incident_id=incident_id,
                         probe_type=ProbeType.INTERFACE_STATE,
                         source_router=router,
@@ -295,7 +306,7 @@ class CounterfactualVerificationEngine:
                             f"Verify operational state of {router} {iface} "
                             "for counterfactual hypothesis"
                         ),
-                        requested_at=datetime.now(UTC),
+                        requested_at=req_time,
                     )
                 )
                 return (
@@ -411,15 +422,18 @@ class CounterfactualVerificationEngine:
 
                 if link_id in ctx.links:
                     link = ctx.links[link_id]
+                    probe_sig = f"{incident_id}:ospf:{link.router_a}:{link.router_b}:{link_id}"
+                    h = hashlib.sha256(probe_sig.encode("utf-8")).hexdigest()[:8]
+                    probe_id = f"probe-ospf-{h}"
                     probes.append(
                         ProbeRequest(
-                            probe_id=f"probe-ospf-{uuid4().hex[:8]}",
+                            probe_id=probe_id,
                             incident_id=incident_id,
                             probe_type=ProbeType.OSPF_NEIGHBOUR,
                             source_router=link.router_a,
                             target_router=link.router_b,
                             selection_reason=f"Poll OSPF neighbor state on link {link_id}",
-                            requested_at=datetime.now(UTC),
+                            requested_at=req_time,
                         )
                     )
                 return (
@@ -519,20 +533,24 @@ class CounterfactualVerificationEngine:
                     probes,
                 )
 
+            src_r = next(
+                r.router_id for r in ctx.routers.values() if r.router_id != router
+            )
+            probe_sig = f"{incident_id}:avail:{src_r}:{router}"
+            h = hashlib.sha256(probe_sig.encode("utf-8")).hexdigest()[:8]
+            probe_id = f"probe-avail-{h}"
             probes.append(
                 ProbeRequest(
-                    probe_id=f"probe-avail-{uuid4().hex[:8]}",
+                    probe_id=probe_id,
                     incident_id=incident_id,
                     probe_type=ProbeType.PING,
-                    source_router=next(
-                        r.router_id for r in ctx.routers.values() if r.router_id != router
-                    ),
+                    source_router=src_r,
                     target_router=router,
                     target_address=ctx.routers[router].loopback_address
                     if router in ctx.routers
                     else None,
                     selection_reason=f"Probe reachability of router {router}",
-                    requested_at=datetime.now(UTC),
+                    requested_at=req_time,
                 )
             )
             return (
@@ -557,16 +575,19 @@ class CounterfactualVerificationEngine:
             if not target_pings:
                 if comp in ctx.links:
                     link = ctx.links[comp]
+                    probe_sig = f"{incident_id}:loss:{link.router_a}:{link.router_b}:{comp}"
+                    h = hashlib.sha256(probe_sig.encode("utf-8")).hexdigest()[:8]
+                    probe_id = f"probe-loss-{h}"
                     probes.append(
                         ProbeRequest(
-                            probe_id=f"probe-loss-{uuid4().hex[:8]}",
+                            probe_id=probe_id,
                             incident_id=incident_id,
                             probe_type=ProbeType.PING,
                             source_router=link.router_a,
                             target_router=link.router_b,
                             target_address=link.address_b.split("/")[0],
                             selection_reason=f"Measure packet loss across link {comp}",
-                            requested_at=datetime.now(UTC),
+                            requested_at=req_time,
                         )
                     )
                 return (
@@ -647,16 +668,19 @@ class CounterfactualVerificationEngine:
             if not target_pings:
                 if comp in ctx.links:
                     link = ctx.links[comp]
+                    probe_sig = f"{incident_id}:rtt:{link.router_a}:{link.router_b}:{comp}"
+                    h = hashlib.sha256(probe_sig.encode("utf-8")).hexdigest()[:8]
+                    probe_id = f"probe-rtt-{h}"
                     probes.append(
                         ProbeRequest(
-                            probe_id=f"probe-rtt-{uuid4().hex[:8]}",
+                            probe_id=probe_id,
                             incident_id=incident_id,
                             probe_type=ProbeType.PING,
                             source_router=link.router_a,
                             target_router=link.router_b,
                             target_address=link.address_b.split("/")[0],
                             selection_reason=f"Measure round-trip latency across link {comp}",
-                            requested_at=datetime.now(UTC),
+                            requested_at=req_time,
                         )
                     )
                 return (
@@ -764,15 +788,17 @@ class CounterfactualVerificationEngine:
         evidence: list[EvidenceRecord],
         topology: Topology,
         incident_window: tuple[datetime, datetime | None] | None = None,
+        verified_at: datetime | None = None,
     ) -> VerificationReport:
         """Verify the top ranked hypotheses and evaluate competing alternatives."""
+        v_time = verified_at or datetime.now(UTC)
         top_results: list[CounterfactualVerificationResult] = []
         competing_results: list[CounterfactualVerificationResult] = []
 
         # 1. Verify all top hypotheses present in diagnosis
         for rh in diagnosis.ranked_hypotheses:
             res = self.verify_hypothesis_detailed(
-                rh.hypothesis, evidence, topology, incident_window
+                rh.hypothesis, evidence, topology, incident_window, verified_at=v_time
             )
             top_results.append(res)
 
@@ -809,7 +835,7 @@ class CounterfactualVerificationEngine:
                     rule_score=0.0,
                 )
                 alt_res = self.verify_hypothesis_detailed(
-                    alt_hyp, evidence, topology, incident_window
+                    alt_hyp, evidence, topology, incident_window, verified_at=v_time
                 )
                 competing_results.append(alt_res)
 
@@ -829,7 +855,7 @@ class CounterfactualVerificationEngine:
 
         return VerificationReport(
             incident_id=diagnosis.incident_id,
-            verified_at=datetime.now(UTC),
+            verified_at=v_time,
             engine_version=VERIFIER_VERSION,
             top_hypotheses_verifications=top_results,
             competing_hypotheses_verifications=competing_results,
@@ -839,6 +865,7 @@ class CounterfactualVerificationEngine:
     def verify_snapshot_dict(
         self,
         snapshot: dict[str, Any],
+        verified_at: datetime | None = None,
     ) -> list[VerificationReport]:
         """Strict neutral snapshot entry point: parses snapshot, diagnoses, and verifies."""
         EvidenceNormalizer.assert_no_ground_truth_leakage(snapshot)
@@ -886,6 +913,7 @@ class CounterfactualVerificationEngine:
                 evidence=records,
                 topology=topology,
                 incident_window=(w_start, w_end),
+                verified_at=verified_at,
             )
             reports.append(report)
 

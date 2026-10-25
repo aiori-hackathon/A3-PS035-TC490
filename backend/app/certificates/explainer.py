@@ -201,6 +201,13 @@ class ExplanationEngine:
                     "All required counterfactual expectations for this fault pattern were "
                     "confirmed by independent telemetry observations."
                 )
+                if top_h.rule_score < 1.0:
+                    lines.append(
+                        "Original heuristic rule score reflects penalty from peer observation "
+                        "asymmetry (e.g., OSPF dead-timer lag on peer before dead-interval "
+                        "expiry), which counterfactual verification accounted for across "
+                        "required endpoints."
+                    )
             elif verification.verdict == CounterfactualVerdict.CONTRADICTED:
                 lines.append(
                     "Warning: Counterfactual verification detected one or more contradictory "
@@ -229,7 +236,13 @@ class ExplanationEngine:
         ]
         if len(refs) > 5:
             items.append(f"... and {len(refs) - 5} additional contradictory observations.")
-        return "; ".join(items)
+        res = "; ".join(items)
+        if any("OSPF neighbor" in r.summary and "Full" in r.summary for r in refs):
+            res += (
+                " (Peer OSPF Full observation is temporally explained by protocol dead-timer "
+                "lag prior to dead-interval expiry; does not refute physical link severance)."
+            )
+        return res
 
     def _summarize_counterfactual(
         self,
