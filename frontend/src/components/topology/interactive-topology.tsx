@@ -47,22 +47,23 @@ export function InteractiveTopology({
   onSelectLink,
   scenarioKey = "baseline",
 }: InteractiveTopologyProps) {
-  const [activeRouterId, setActiveRouterId] = useState<string | null>(
-    selectedRouterId || "R1"
-  );
-  const [activeLinkId, setActiveLinkId] = useState<string | null>(
-    selectedLinkId || null
-  );
+  const [internalRouterId, setInternalRouterId] = useState<string | null>("R1");
+  const [internalLinkId, setInternalLinkId] = useState<string | null>(null);
+
+  const activeRouterId =
+    selectedRouterId !== undefined ? selectedRouterId : internalRouterId;
+  const activeLinkId =
+    selectedLinkId !== undefined ? selectedLinkId : internalLinkId;
 
   const handleRouterClick = (rid: string) => {
-    setActiveRouterId(rid);
-    setActiveLinkId(null);
+    setInternalRouterId(rid);
+    setInternalLinkId(null);
     onSelectRouter?.(rid);
   };
 
   const handleLinkClick = (lid: string) => {
-    setActiveLinkId(lid);
-    setActiveRouterId(null);
+    setInternalLinkId(lid);
+    setInternalRouterId(null);
     onSelectLink?.(lid);
   };
 

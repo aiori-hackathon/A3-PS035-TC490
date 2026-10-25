@@ -61,6 +61,12 @@ export default function OperationsCenterApp() {
   const [verification, setVerification] = useState<VerificationReport | null>(null);
   const [probePlan, setProbePlan] = useState<SafeProbePlan | null>(null);
   const [evidenceItems, setEvidenceItems] = useState<EvidenceRecord[]>([]);
+  const [initialEvidenceFilter, setInitialEvidenceFilter] = useState<string | null>(null);
+
+  const handleNavigateToEvidence = (evidenceId: string) => {
+    setInitialEvidenceFilter(evidenceId);
+    setActiveTab("evidence");
+  };
 
   // Find scenario metadata and check availability
   const currentSnapshot =
@@ -68,7 +74,9 @@ export default function OperationsCenterApp() {
     DEMO_SCENARIOS.find((s) => s.scenario_key.toUpperCase() === activeScenarioKey.toUpperCase()) ||
     null;
 
-  const isScenarioUnavailable = currentSnapshot?.availability === "UNAVAILABLE_PENDING_CAPTURE";
+  const isScenarioUnavailable =
+    currentSnapshot?.availability === "CERTIFIED_CAPTURE_NOT_YET_AVAILABLE_ON_THIS_DEVICE" ||
+    currentSnapshot?.availability === "UNAVAILABLE_PENDING_CAPTURE";
 
   useEffect(() => {
     let ignore = false;
@@ -192,7 +200,7 @@ export default function OperationsCenterApp() {
               }`}
             >
               {isScenarioUnavailable
-                ? "PENDING TRACK A CAPTURE (NO TELEMETRY)"
+                ? "CERTIFIED CAPTURE NOT YET AVAILABLE ON THIS DEVICE"
                 : currentSnapshot?.category === "CERTIFIED_LIVE_EXPERIMENT"
                 ? "CERTIFIED LIVE RUN (ARCHIVED REPLAY)"
                 : "PHASE 06 BENCHMARK EVALUATION (ARCHIVED)"}
@@ -226,20 +234,20 @@ export default function OperationsCenterApp() {
                 <AlertTriangle className="h-8 w-8" />
               </div>
               <h2 className="text-lg font-bold text-amber-200 uppercase tracking-wide">
-                Certified Live Telemetry Unavailable
+                Certified Live Telemetry Unavailable On This Device
               </h2>
               <p className="text-sm text-slate-300 leading-relaxed">
-                Scenario <span className="font-mono text-amber-300 font-semibold">{activeScenarioKey}</span> is a certified live fault experiment ({currentSnapshot?.name || activeScenarioKey}), but its live telemetry capture is currently pending Track A lab execution on MacBook 1.
+                Scenario <span className="font-mono text-amber-300 font-semibold">{activeScenarioKey}</span> is a certified live fault experiment ({currentSnapshot?.name || activeScenarioKey}). Certified experiments have already been executed on MacBook 1; the original certified archives reside on MacBook 1 and have not yet been transferred to this device.
               </p>
               <div className="p-4 bg-slate-900/90 rounded border border-slate-800 text-xs font-mono text-slate-400 text-left space-y-1.5">
                 <p className="text-slate-200 font-semibold flex items-center gap-1.5">
                   <Database className="h-3.5 w-3.5 text-amber-400" />
                   Honest Data Lineage Status:
                 </p>
-                <p>• Certified Live Snapshot: <span className="text-amber-400 font-bold">UNAVAILABLE (NO FABRICATED DATA)</span></p>
+                <p>• Device Archive Status: <span className="text-amber-400 font-bold">CERTIFIED CAPTURE NOT YET AVAILABLE ON THIS DEVICE</span></p>
                 <p>• Expected Target: <span className="text-cyan-300">{currentSnapshot?.target_component || "L12 / R3"}</span></p>
-                <p>• Provenance: Awaiting contemporaneous live containerlab capture from Track A.</p>
-                <p>• Ground Truth Isolation: Zero injected metadata enters inference.</p>
+                <p>• Provenance: Certified live experiment executed on MacBook 1; awaiting cross-machine archive transfer.</p>
+                <p>• Ground Truth Isolation: Zero synthetic telemetry fabricated or injected into inference.</p>
               </div>
               <div className="pt-2 flex flex-wrap justify-center gap-3">
                 <button
@@ -307,6 +315,7 @@ export default function OperationsCenterApp() {
               activeIncidentId={activeIncidentId}
               onSelectIncident={setActiveIncidentId}
               diagnosis={diagnosis}
+              onNavigateToEvidence={handleNavigateToEvidence}
             />
           )}
 
@@ -314,6 +323,7 @@ export default function OperationsCenterApp() {
             <EvidenceExplorer
               evidenceItems={evidenceItems}
               activeScenarioKey={activeScenarioKey}
+              initialSearchQuery={initialEvidenceFilter}
             />
           )}
 

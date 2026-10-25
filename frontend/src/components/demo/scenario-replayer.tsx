@@ -86,9 +86,9 @@ export function ScenarioReplayer({
             <p className="text-slate-200 font-semibold">Strict Data Lineage Policy:</p>
             <p className="leading-relaxed">
               <strong>Certified Live Experiments (F1–F5):</strong> Represent the 5 formal NEXORA
-              laboratory fault scenarios. Only F1 has contemporaneous live capture bindings (Phase 06.4).
-              F2–F5 remain in pending capture status until executed in the Containerlab lab by Track A.
-              Uncaptured live telemetry is never synthesized or fabricated.
+              laboratory fault scenarios. Certified live experiments have already been executed on MacBook 1.
+              MacBook 2 currently hosts the verified F1 replay; original certified archives for F2–F5 reside
+              on MacBook 1. Uncaptured or untransferred telemetry is never synthesized or fabricated.
             </p>
             <p className="leading-relaxed text-slate-400">
               <strong>Phase 06 Benchmark Dataset:</strong> Contains historical cross-run evaluation
@@ -134,7 +134,7 @@ export function ScenarioReplayer({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {(activeCatalogTab === "certified" ? certifiedScenarios : benchmarkScenarios).map((sc) => {
           const isSelected = activeScenarioKey.toLowerCase() === sc.scenario_key.toLowerCase();
-          const isAvailable = sc.availability !== "UNAVAILABLE_PENDING_CAPTURE";
+          const isAvailable = sc.availability === "AVAILABLE";
 
           return (
             <Card
@@ -173,7 +173,7 @@ export function ScenarioReplayer({
                   )}
                   {!isAvailable && (
                     <Badge variant="outline" className="text-[9px] py-0 px-1.5 font-mono border-amber-500/30 text-amber-400">
-                      CAPTURE PENDING
+                      NOT ON THIS DEVICE
                     </Badge>
                   )}
                 </div>
@@ -206,7 +206,7 @@ export function ScenarioReplayer({
                   <div className="flex justify-between">
                     <span>Records:</span>
                     <span className="text-cyan-300 font-semibold">
-                      {isAvailable ? `${sc.record_count} observations` : "Awaiting lab run"}
+                      {isAvailable ? `${sc.record_count} observations` : "Awaiting archive transfer"}
                     </span>
                   </div>
 
@@ -248,10 +248,10 @@ export function ScenarioReplayer({
                     variant="outline"
                     size="sm"
                     disabled
-                    className="w-full text-xs font-mono mt-2 border-slate-800 bg-slate-950/40 text-slate-600 cursor-not-allowed"
+                    className="w-full text-[10px] font-mono mt-2 border-slate-800 bg-slate-950/40 text-slate-500 cursor-not-allowed"
                   >
-                    <Lock className="h-3 w-3 mr-1.5 text-slate-600" />
-                    Capture Pending in Lab
+                    <Lock className="h-3 w-3 mr-1.5 text-slate-500" />
+                    CERTIFIED CAPTURE NOT YET AVAILABLE ON THIS DEVICE
                   </Button>
                 )}
               </CardContent>

@@ -108,7 +108,10 @@ export interface SnapshotSummary {
   name: string;
   description: string;
   category?: "CERTIFIED_LIVE_EXPERIMENT" | "BENCHMARK_EVALUATION";
-  availability?: "AVAILABLE" | "UNAVAILABLE_PENDING_CAPTURE";
+  availability?:
+    | "AVAILABLE"
+    | "CERTIFIED_CAPTURE_NOT_YET_AVAILABLE_ON_THIS_DEVICE"
+    | "UNAVAILABLE_PENDING_CAPTURE";
   certified_fault_id?: string | null;
   target_component?: string | null;
   captured_at: string | null;
@@ -237,10 +240,33 @@ export interface VerificationReport {
   summary: string;
 }
 
+export interface RankedProbeRecommendation {
+  probe_id: string;
+  rank: number;
+  probe_type: string;
+  source_router: string;
+  target_router: string | null;
+  target_interface: string | null;
+  target_prefix: string | null;
+  target_address: string | null;
+  safety_status: string;
+  ranking_rationale: string;
+  relative_cost: number;
+  expected_discriminating_outcomes: string[];
+  missing_evidence_addressed: string[];
+  timeout_s: number;
+  execution_authorization: string;
+}
+
 export interface SafeProbePlan {
   incident_id: string;
   status: "PROVISIONAL" | "ACTIVE" | "COMPLETED";
   recommendations: ProbeRequest[];
+  ranked_probes?: RankedProbeRecommendation[];
+  total_plan_cost?: number;
+  execution_status?: string;
+  allowlist_verified?: boolean;
+  contract_status?: string;
   information_gain: string;
   entropy_reduction_bits: number | null;
   planner_source: string;
@@ -249,6 +275,35 @@ export interface SafeProbePlan {
   execution_blocked_reason: string;
   notes: string[];
   data_source?: string;
+}
+
+export interface AuditableEvidenceCertificate {
+  certificate_id: string;
+  incident_id: string;
+  snapshot_id: string;
+  snapshot_digest: string | null;
+  source_run_id: string | null;
+  fault_type: string;
+  fault_location_component_id: string;
+  fault_location_kind: string;
+  heuristic_score: number;
+  score_label: string;
+  counterfactual_verdict: string;
+  explanation: string;
+  supporting_evidence_ids: string[];
+  contradictory_evidence_ids: string[];
+  missing_observations: string[];
+  collector_failures: string[];
+  evidence_coverage_pct: number;
+  sufficiency_met: boolean;
+  recommended_safe_checks: string[];
+  provenance_integrity_status: string;
+  provenance_details: string;
+  limitations: string[];
+  causation_disclaimer: string;
+  is_certified: boolean;
+  data_source: string;
+  generated_at: string;
 }
 
 export interface EvidenceRecord {
@@ -428,72 +483,72 @@ export const DEMO_SCENARIOS: SnapshotSummary[] = [
     scenario_key: "F2_ROUTER_FAILURE",
     name: "F2: Router Failure (Certified Live Experiment)",
     description:
-      "Target: Router R3 node outage. Certified live containerlab execution pending from Track A.",
+      "Target: Router R3 node outage. Certified experiment executed on MacBook 1; evidence archive resides on MacBook 1.",
     category: "CERTIFIED_LIVE_EXPERIMENT",
-    availability: "UNAVAILABLE_PENDING_CAPTURE",
+    availability: "CERTIFIED_CAPTURE_NOT_YET_AVAILABLE_ON_THIS_DEVICE",
     certified_fault_id: "F2_ROUTER_FAILURE",
     target_component: "R3",
     captured_at: null,
     record_count: 0,
     incident_ids: [],
-    data_source: "PENDING_TRACK_A_CAPTURE",
+    data_source: "CERTIFIED_ARCHIVE_NOT_ON_DEVICE",
     is_live: false,
     unavailable_reason:
-      "Live FRRouting capture not yet completed by Track A on MacBook 1. Telemetry unavailable.",
+      "CERTIFIED CAPTURE NOT YET AVAILABLE ON THIS DEVICE. Certified experiment executed on MacBook 1.",
   },
   {
     snapshot_id: "snap-f3_ospf_config_mismatch",
     scenario_key: "F3_OSPF_CONFIG_MISMATCH",
     name: "F3: OSPF Config Mismatch (Certified Live Experiment)",
     description:
-      "Target: Link L12 hello/dead timer mismatch. Certified live containerlab execution pending from Track A.",
+      "Target: Link L12 hello/dead timer mismatch. Certified experiment executed on MacBook 1; evidence archive resides on MacBook 1.",
     category: "CERTIFIED_LIVE_EXPERIMENT",
-    availability: "UNAVAILABLE_PENDING_CAPTURE",
+    availability: "CERTIFIED_CAPTURE_NOT_YET_AVAILABLE_ON_THIS_DEVICE",
     certified_fault_id: "F3_OSPF_CONFIG_MISMATCH",
     target_component: "L12",
     captured_at: null,
     record_count: 0,
     incident_ids: [],
-    data_source: "PENDING_TRACK_A_CAPTURE",
+    data_source: "CERTIFIED_ARCHIVE_NOT_ON_DEVICE",
     is_live: false,
     unavailable_reason:
-      "Live FRRouting capture not yet completed by Track A on MacBook 1. Telemetry unavailable.",
+      "CERTIFIED CAPTURE NOT YET AVAILABLE ON THIS DEVICE. Certified experiment executed on MacBook 1.",
   },
   {
     snapshot_id: "snap-f4_packet_loss",
     scenario_key: "F4_PACKET_LOSS",
     name: "F4: Packet Loss (Certified Live Experiment)",
     description:
-      "Target: Link L12 netem packet loss. Certified live containerlab execution pending from Track A.",
+      "Target: Link L12 netem packet loss. Certified experiment executed on MacBook 1; evidence archive resides on MacBook 1.",
     category: "CERTIFIED_LIVE_EXPERIMENT",
-    availability: "UNAVAILABLE_PENDING_CAPTURE",
+    availability: "CERTIFIED_CAPTURE_NOT_YET_AVAILABLE_ON_THIS_DEVICE",
     certified_fault_id: "F4_PACKET_LOSS",
     target_component: "L12",
     captured_at: null,
     record_count: 0,
     incident_ids: [],
-    data_source: "PENDING_TRACK_A_CAPTURE",
+    data_source: "CERTIFIED_ARCHIVE_NOT_ON_DEVICE",
     is_live: false,
     unavailable_reason:
-      "Live FRRouting capture not yet completed by Track A on MacBook 1. Telemetry unavailable.",
+      "CERTIFIED CAPTURE NOT YET AVAILABLE ON THIS DEVICE. Certified experiment executed on MacBook 1.",
   },
   {
     snapshot_id: "snap-f5_high_latency",
     scenario_key: "F5_HIGH_LATENCY",
     name: "F5: High Latency (Certified Live Experiment)",
     description:
-      "Target: Link L12 netem artificial delay. Certified live containerlab execution pending from Track A.",
+      "Target: Link L12 netem artificial delay. Certified experiment executed on MacBook 1; evidence archive resides on MacBook 1.",
     category: "CERTIFIED_LIVE_EXPERIMENT",
-    availability: "UNAVAILABLE_PENDING_CAPTURE",
+    availability: "CERTIFIED_CAPTURE_NOT_YET_AVAILABLE_ON_THIS_DEVICE",
     certified_fault_id: "F5_HIGH_LATENCY",
     target_component: "L12",
     captured_at: null,
     record_count: 0,
     incident_ids: [],
-    data_source: "PENDING_TRACK_A_CAPTURE",
+    data_source: "CERTIFIED_ARCHIVE_NOT_ON_DEVICE",
     is_live: false,
     unavailable_reason:
-      "Live FRRouting capture not yet completed by Track A on MacBook 1. Telemetry unavailable.",
+      "CERTIFIED CAPTURE NOT YET AVAILABLE ON THIS DEVICE. Certified experiment executed on MacBook 1.",
   },
 
   // 2. Phase 06 Benchmark Evaluation Dataset (Historical Captures)
@@ -1019,3 +1074,55 @@ export async function fetchEvidence(params: {
 
   return safeFetch<EvidenceQueryResponse>(`/api/v1/evidence?${searchParams.toString()}`, fallback);
 }
+
+export async function fetchEvidenceCertificate(
+  incidentId: string
+): Promise<AuditableEvidenceCertificate | null> {
+  const fallback: AuditableEvidenceCertificate = {
+    certificate_id: `cert-fallback-${incidentId}`,
+    incident_id: incidentId,
+    snapshot_id: "snap-fallback",
+    snapshot_digest: null,
+    source_run_id: null,
+    fault_type: "LINK_FAILURE",
+    fault_location_component_id: "L12",
+    fault_location_kind: "LINK",
+    heuristic_score: 0.95,
+    score_label: "Rule Alignment Score",
+    counterfactual_verdict: "SUPPORTED",
+    explanation:
+      "Deterministic rule matching verified: interface DOWN and OSPF neighbour DOWN observed on link L12.",
+    supporting_evidence_ids: ["ev-interface-r1-eth1", "ev-ospf-r1-neighbour-r2"],
+    contradictory_evidence_ids: [],
+    missing_observations: [],
+    collector_failures: [],
+    evidence_coverage_pct: 100.0,
+    sufficiency_met: true,
+    recommended_safe_checks: [
+      "INTERFACE_STATE from R1 to eth1",
+      "OSPF_NEIGHBOUR from R1 to R2",
+    ],
+    provenance_integrity_status: "STRUCTURALLY_VALID_LOCAL_CAPTURE",
+    provenance_details: "Local fallback presentation fixture for offline testing.",
+    limitations: [
+      "A SUPPORTED diagnosis indicates rigorous mathematical consistency with observed evidence and counterfactual rules, but is not absolute philosophical proof of causation.",
+      "Telemetry observation window is strictly bounded to the active incident period.",
+      "Reasoning operates under single localized fault hypothesis per topological ring segment.",
+    ],
+    causation_disclaimer:
+      "A SUPPORTED diagnosis indicates rigorous mathematical consistency with observed evidence and counterfactual rules, but is not absolute philosophical proof of causation.",
+    is_certified: false,
+    data_source: "ARCHIVED_REPLAY",
+    generated_at: new Date().toISOString(),
+  };
+
+  return safeFetch<AuditableEvidenceCertificate>(
+    `/api/v1/diagnosis/${encodeURIComponent(incidentId)}/certificate`,
+    fallback
+  );
+}
+
+export async function fetchAllCertificates(): Promise<AuditableEvidenceCertificate[]> {
+  return safeFetch<AuditableEvidenceCertificate[]>("/api/v1/certificates", []);
+}
+

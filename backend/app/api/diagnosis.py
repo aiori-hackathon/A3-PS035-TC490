@@ -10,7 +10,10 @@ from fastapi import APIRouter, HTTPException, status
 
 from app.api.presentation_adapter import PresentationAdapter
 from app.schemas.diagnosis import DiagnosisResult, RankedHypothesis
-from app.schemas.presentation import DetailError
+from app.schemas.presentation import (
+    AuditableEvidenceCertificateResponse,
+    DetailError,
+)
 
 router = APIRouter(prefix="/diagnosis", tags=["Diagnosis"])
 
@@ -63,3 +66,25 @@ async def get_hypotheses(incident_id: str) -> list[RankedHypothesis]:
             detail=f"Hypotheses for incident '{incident_id}' not found.",
         )
     return hyps
+
+
+@router.get(
+    "/{incident_id}/certificate",
+    response_model=AuditableEvidenceCertificateResponse,
+    responses={404: {"model": DetailError, "description": "Certificate not found"}},
+    status_code=status.HTTP_200_OK,
+    summary="Get Auditable Evidence Certificate for Incident",
+    description=(
+        "Returns full Phase 09 auditable evidence certificate with provenance and "
+        "causation disclaimer."
+    ),
+)
+async def get_evidence_certificate(incident_id: str) -> AuditableEvidenceCertificateResponse:
+    adapter = PresentationAdapter.get_instance()
+    cert = adapter.get_evidence_certificate(incident_id)
+    if not cert:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Evidence certificate for incident '{incident_id}' not found.",
+        )
+    return cert

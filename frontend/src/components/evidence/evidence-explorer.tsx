@@ -15,13 +15,22 @@ import {
 interface EvidenceExplorerProps {
   evidenceItems: EvidenceRecord[];
   activeScenarioKey?: string;
+  initialSearchQuery?: string | null;
 }
 
 export function EvidenceExplorer({
   evidenceItems,
   activeScenarioKey = "F1",
+  initialSearchQuery = null,
 }: EvidenceExplorerProps) {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [userQuery, setUserQuery] = useState<string | null>(null);
+  const [prevInitial, setPrevInitial] = useState(initialSearchQuery);
+  if (initialSearchQuery !== prevInitial) {
+    setPrevInitial(initialSearchQuery);
+    setUserQuery(null);
+  }
+  const searchQuery = userQuery !== null ? userQuery : (initialSearchQuery || "");
+
   const [selectedRouter, setSelectedRouter] = useState<string>("ALL");
   const [selectedSourceType, setSelectedSourceType] = useState<string>("ALL");
   const [inspectingRecord, setInspectingRecord] = useState<EvidenceRecord | null>(null);
@@ -80,7 +89,7 @@ export function EvidenceExplorer({
               type="text"
               placeholder="Search evidence ID, event, command..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => setUserQuery(e.target.value)}
               className="w-full pl-9 pr-3 py-1.5 rounded-lg bg-slate-950/70 border border-slate-800 text-xs font-mono text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50"
             />
           </div>

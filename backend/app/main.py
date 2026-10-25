@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.certificates import router as certificates_router
 from app.api.diagnosis import router as diagnosis_router
 from app.api.evidence import router as evidence_router
 from app.api.health import router as health_router
@@ -58,6 +59,7 @@ def create_application() -> FastAPI:
     app.include_router(verification_router, prefix=settings.API_V1_PREFIX)
     app.include_router(probes_router, prefix=settings.API_V1_PREFIX)
     app.include_router(evidence_router, prefix=settings.API_V1_PREFIX)
+    app.include_router(certificates_router, prefix=settings.API_V1_PREFIX)
 
     return app
 

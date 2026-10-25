@@ -27,6 +27,7 @@ class DataSourceMode(str, Enum):
     CERTIFIED_LIVE_RUN = "CERTIFIED_LIVE_RUN"
     ARCHIVED_REPLAY = "ARCHIVED_REPLAY"
     CANONICAL_SPECIFICATION = "CANONICAL_SPECIFICATION"
+    CERTIFIED_ARCHIVE_NOT_ON_DEVICE = "CERTIFIED_ARCHIVE_NOT_ON_DEVICE"
     PENDING_TRACK_A_CAPTURE = "PENDING_TRACK_A_CAPTURE"
 
 
@@ -41,6 +42,9 @@ class ScenarioAvailability(str, Enum):
     """Availability of archived telemetry data."""
 
     AVAILABLE = "AVAILABLE"
+    CERTIFIED_CAPTURE_NOT_YET_AVAILABLE_ON_THIS_DEVICE = (
+        "CERTIFIED_CAPTURE_NOT_YET_AVAILABLE_ON_THIS_DEVICE"
+    )
     UNAVAILABLE_PENDING_CAPTURE = "UNAVAILABLE_PENDING_CAPTURE"
 
 
@@ -210,8 +214,42 @@ class EvidenceQueryResponse(BaseModel):
     data_source: DataSourceMode = DataSourceMode.ARCHIVED_REPLAY
 
 
+class RankedProbeRecommendation(BaseModel):
+    """Single ranked probe recommendation adhering to Phase 08 planner contracts."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    probe_id: str
+    rank: int
+    probe_type: str = Field(
+        description=(
+            "Probe check type (INTERFACE_STATE, OSPF_NEIGHBOUR, ROUTING_TABLE, PING, TRACEROUTE)."
+        )
+    )
+    source_router: str
+    target_router: str | None = None
+    target_interface: str | None = None
+    target_prefix: str | None = None
+    target_address: str | None = None
+    safety_status: str = Field(
+        default="ALLOWLIST_VALIDATED",
+        description="Safety status: SAFE_READ_ONLY, ALLOWLIST_VALIDATED.",
+    )
+    ranking_rationale: str
+    relative_cost: int = Field(default=1, description="Relative execution cost weight.")
+    expected_discriminating_outcomes: list[str] = Field(default_factory=list)
+    missing_evidence_addressed: list[str] = Field(default_factory=list)
+    timeout_s: float = 5.0
+    execution_authorization: str = Field(
+        default="PLANNED — NOT EXECUTED",
+        description="Always 'PLANNED — NOT EXECUTED'. Automated execution is hard-disabled.",
+    )
+
+
 class SafeProbePlanResponse(BaseModel):
-    """Read-only presentation plan of safe diagnostic probes."""
+    """
+    Read-only presentation plan of safe diagnostic probes adhering to Phase 08 integration contract.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
@@ -221,6 +259,14 @@ class SafeProbePlanResponse(BaseModel):
         description="Provisional recommendations pending Phase 08 planner.",
     )
     recommendations: list[ProbeRequest] = Field(default_factory=list)
+    ranked_probes: list[RankedProbeRecommendation] = Field(default_factory=list)
+    total_recommended_probes: int = 0
+    total_plan_cost: int = 0
+    allowlist_verified: bool = True
+    execution_status: str = Field(
+        default="PLANNED — NOT EXECUTED",
+        description="Authoritative probe plan execution status.",
+    )
     information_gain: str = Field(
         default="UNAVAILABLE_PENDING_PHASE_08_PLANNER",
         description="Information gain metric status.",
@@ -248,7 +294,72 @@ class SafeProbePlanResponse(BaseModel):
         description="Reason why execution is blocked.",
     )
     notes: list[str] = Field(default_factory=list)
+    contract_status: str = Field(
+        default="PROVISIONAL_ADAPTER_PREVIEW",
+        description="Contract integration readiness status.",
+    )
     data_source: DataSourceMode = DataSourceMode.ARCHIVED_REPLAY
+
+
+class AuditableEvidenceCertificateResponse(BaseModel):
+    """
+    Auditable Evidence Certificate presentation model adhering to Phase 09 integration contract.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    certificate_id: str
+    incident_id: str
+    snapshot_id: str
+    snapshot_digest: str | None = Field(
+        default=None,
+        description="SHA-256 digest of neutral source snapshot (or None if unverified/absent).",
+    )
+    source_run_id: str | None = None
+    fault_type: str = Field(description="Predicted root cause fault type.")
+    fault_location_component_id: str = Field(description="Component ID (e.g. L12, R3).")
+    fault_location_kind: str = Field(description="Location kind (LINK, ROUTER, INTERFACE).")
+    heuristic_score: float = Field(
+        description="Deterministic rule alignment score in [0.0, 1.0].",
+    )
+    score_label: str = Field(
+        default="Rule Alignment Score",
+        description="Always 'Rule Alignment Score'. Never probability.",
+    )
+    counterfactual_verdict: str = Field(
+        description=(
+            "Counterfactual verification verdict (SUPPORTED, CONTRADICTED, INSUFFICIENT_EVIDENCE)."
+        ),
+    )
+    explanation: str = Field(description="Evidence-backed root cause explanation.")
+    supporting_evidence_ids: list[str] = Field(default_factory=list)
+    contradictory_evidence_ids: list[str] = Field(default_factory=list)
+    missing_observations: list[str] = Field(default_factory=list)
+    collector_failures: list[str] = Field(default_factory=list)
+    evidence_coverage_pct: float = Field(default=0.0)
+    sufficiency_met: bool = Field(default=False)
+    recommended_safe_checks: list[str] = Field(default_factory=list)
+    provenance_integrity_status: str = Field(
+        default="STRUCTURALLY_VALID_LOCAL_CAPTURE",
+        description=(
+            "Distinction: STRUCTURALLY_VALID_LOCAL_CAPTURE, PROVENANCE_VERIFIED, "
+            "or AWAITING_CERTIFIED_ARCHIVE_TRANSFER."
+        ),
+    )
+    provenance_details: str = Field(
+        default="Evaluation telemetry captured from local containerlab observation dataset.",
+    )
+    limitations: list[str] = Field(default_factory=list)
+    causation_disclaimer: str = Field(
+        default=(
+            "A SUPPORTED diagnosis indicates rigorous mathematical consistency with "
+            "observed evidence and counterfactual rules, but is not absolute "
+            "philosophical proof of causation."
+        ),
+    )
+    is_certified: bool = False
+    data_source: DataSourceMode = DataSourceMode.ARCHIVED_REPLAY
+    generated_at: datetime
 
 
 class DetailError(BaseModel):
